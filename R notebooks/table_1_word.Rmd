@@ -1,5 +1,5 @@
 ---
-title: "Table 1. Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline"
+title: "Table 1. Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline (N = 83,145)"
 output:
   word_document:
     reference_docx: word_style_template_01.docx

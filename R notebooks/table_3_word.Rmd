@@ -1,0 +1,201 @@
+---
+title: Table 3. Number and percent of women who report sexual satisfaction1 and sexual
+  frequency satisfaction2 at baseline by age group and abuse status, results from
+  the Women’s Health Initiative (WHI) (N = 78,480).
+output:
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+```{r setup, include=FALSE}
+# Load packages
+library(tidyverse)
+library(data.table)
+library(xtable)
+
+# Load functions
+source("../R scripts/functions.R")
+source("../R scripts/table_3_functions.R")
+```
+
+```{r load_data, include=FALSE}
+baseline_only <- read_rds(path = "../data/baseline_only.rds")
+```
+
+```{r data_management, include=FALSE}
+baseline_t3 <- baseline_only %>% 
+  select(age_group_f, abuse_d_f, abuse4cat_f, satisfied_f, freq_satisfied_f, satfrqsx_f) %>% 
+  filter(!is.na(satisfied_f) & !is.na(satfrqsx_f)) %>% 
+  map_if(is.factor, as.character) %>% 
+  as_tibble()
+rm(baseline_only)
+check_data(baseline_t3) # 78,480 observations and 6 variables
+```
+
+```{r, as_dt, echo=FALSE}
+dt <- as.data.table(baseline_t3)
+```
+
+```{r headers, include=FALSE}
+table_03 <- tibble(
+  `Age Group` = vector(mode = "character", length = 22),
+  `Abuse Status` = vector(mode = "character", length = 22),
+  `Satisfied with Sexual Activity` = vector(mode = "character", length = 22),
+  `Unsatisfied with Sexual Activity` = vector(mode = "character", length = 22),
+  `Satisfied with Sexual Frequency` = vector(mode = "character", length = 22),
+  `Unsatisfied with Sexual Frequency` = vector(mode = "character", length = 22),
+  `Desire Greater Sexual Frequency` = vector(mode = "character", length = 22)
+)
+table_03$`Age Group` <- c("", "", "All", rep("", 4), "50 - 59", rep("", 4), "60-69", 
+                          rep("", 4), "70 and older", rep("", 4))
+table_03[2, 3:7] <- "N (%)"
+```
+
+[\\]: Group N's
+
+```{r Ns, include=FALSE}
+n_satisfied      <- dt[, .N, by = satisfied_f][, N := paste0("N = ", format(N, big.mark = ","))]
+n_freq_satisfied <- dt[, .N, by = freq_satisfied_f][, N := paste0("N = ", format(N, big.mark = ","))]
+n_desire         <- dt[, .N, by = satfrqsx_f][, N := paste0("N = ", format(N, big.mark = ","))][3]
+
+# Add to table 3
+table_03[1, 3:4] <- spread(n_satisfied, key = satisfied_f, value = N) %>% select(2, 1)
+table_03[1, 5:6] <- spread(n_freq_satisfied, key = freq_satisfied_f, value = N) %>% select(2, 1)
+table_03[1, 7]   <- n_desire[1, 2]
+
+# Clean up
+rm(n_satisfied, n_freq_satisfied, n_desire)
+```
+
+```{r create_table_03, echo=FALSE}
+# All ages
+
+## Abuse 2-level
+
+### Sexual satisfaction
+table_03[3:4, 2:4] <- t3_section(dt = dt, group = abuse_d_f, outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[3:4, 5:6] <- t3_section(dt = dt, group = abuse_d_f, outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[3:4, 7] <- t3_section(dt = dt, group = abuse_d_f, outcome = satfrqsx_f, desire = TRUE)
+
+## Abuse 4-level
+
+### Sexual satisfaction
+table_03[5:7, 2:4] <- t3_section(dt = dt, group = abuse4cat_f, outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[5:7, 5:6] <- t3_section(dt = dt, group = abuse4cat_f, outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[5:7, 7] <- t3_section(dt = dt, group = abuse4cat_f, outcome = satfrqsx_f, desire = TRUE)
+
+# Age 50-59
+
+## Abuse 2-level
+
+### Sexual satisfaction
+table_03[8:9, 2:4] <- t3_section(dt = dt[age_group_f == "<50-59"], group = abuse_d_f, outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[8:9, 5:6] <- t3_section(dt = dt[age_group_f == "<50-59"], group = abuse_d_f, outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[8:9, 7] <- t3_section(dt = dt[age_group_f == "<50-59"], group = abuse_d_f, outcome = satfrqsx_f, 
+                                desire = TRUE)
+
+## Abuse 4-level
+
+### Sexual satisfaction
+table_03[10:12, 2:4] <- t3_section(dt = dt[age_group_f == "<50-59"], group = abuse4cat_f, 
+                                   outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[10:12, 5:6] <- t3_section(dt = dt[age_group_f == "<50-59"], group = abuse4cat_f, 
+                                   outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[10:12, 7] <- t3_section(dt = dt[age_group_f == "<50-59"], group = abuse4cat_f, outcome = satfrqsx_f, 
+                               desire = TRUE)
+
+# Age 60-69
+
+## Abuse 2-level
+
+### Sexual satisfaction
+table_03[13:14, 2:4] <- t3_section(dt = dt[age_group_f == "60-69"], group = abuse_d_f, outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[13:14, 5:6] <- t3_section(dt = dt[age_group_f == "60-69"], group = abuse_d_f, outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[13:14, 7] <- t3_section(dt = dt[age_group_f == "60-69"], group = abuse_d_f, outcome = satfrqsx_f, 
+                                desire = TRUE)
+
+## Abuse 4-level
+
+### Sexual satisfaction
+table_03[15:17, 2:4] <- t3_section(dt = dt[age_group_f == "60-69"], group = abuse4cat_f, 
+                                   outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[15:17, 5:6] <- t3_section(dt = dt[age_group_f == "60-69"], group = abuse4cat_f, 
+                                   outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[15:17, 7] <- t3_section(dt = dt[age_group_f == "60-69"], group = abuse4cat_f, outcome = satfrqsx_f, 
+                               desire = TRUE)
+
+# Age 70+
+
+## Abuse 2-level
+
+### Sexual satisfaction
+table_03[18:19, 2:4] <- t3_section(dt = dt[age_group_f == "70-79+"], group = abuse_d_f, outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[18:19, 5:6] <- t3_section(dt = dt[age_group_f == "70-79+"], group = abuse_d_f, outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[18:19, 7] <- t3_section(dt = dt[age_group_f == "70-79+"], group = abuse_d_f, outcome = satfrqsx_f, 
+                                desire = TRUE)
+
+## Abuse 4-level
+
+### Sexual satisfaction
+table_03[20:22, 2:4] <- t3_section(dt = dt[age_group_f == "70-79+"], group = abuse4cat_f, 
+                                   outcome = satisfied_f)
+
+### Sexual frequency satisfaction
+table_03[20:22, 5:6] <- t3_section(dt = dt[age_group_f == "70-79+"], group = abuse4cat_f, 
+                                   outcome = freq_satisfied_f)
+
+### Desire for greater frequency
+table_03[20:22, 7] <- t3_section(dt = dt[age_group_f == "70-79+"], group = abuse4cat_f, outcome = satfrqsx_f, 
+                               desire = TRUE)
+```
+
+
+```{r, echo=FALSE, results="asis"}
+table_03_kable <- knitr::kable(table_03)
+write_rds(table_03_kable, path = "table_03_kable.rds") # Save for use in dashboard
+table_03_kable
+```
+
+```{r notes, include=FALSE}
+# After knitting word table:
+# Reorient to landscape
+# Change all font to TNR 11
+# Left justify title
+# Remove bold from title - except "Table 3"
+# Center columns 3 and above from top to bottom
+# Move bottom border from default location to below "N = XXX"
+# Add second bottom border below "N (%)" row
+# Move "Age Group" and "Abuse Status" down inside the borders
+# Vertially Center "N (%)" row
+# Add line break between age groups
+# Add bottom border to table
+```
+

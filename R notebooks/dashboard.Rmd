@@ -1,0 +1,294 @@
+---
+title: "WHI Abuse and Sexual Function"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+# Load packages
+library(flexdashboard)
+library(tidyverse)
+library(ggrepel)
+```
+
+```{r load_data}
+baseline_only <- read_rds(path = "../data/baseline_only.rds")
+no_abuse <- read_rds(path = "../data/no_abuse.rds")
+any_abuse <- read_rds(path = "../data/any_abuse.rds")
+verbal_only <- read_rds(path = "../data/verbal_only.rds")
+physical_only <- read_rds(path = "../data/physical_only.rds")
+verbal_and_physical <- read_rds(path = "../data/verbal_and_physical.rds")
+```
+
+Sidebar {.sidebar data-width=300}
+===============================================================================
+All analyses include information from women who participated in the [WHI](https://www.whi.org/SitePages/WHI%20Home.aspx), gave a "yes" or "no" response to the two questions related to abuse, and reported being sexually active in the previous year.
+
+Please use the navigation bar (blue bar at the top of the screen) to view:  
+
+1. **Table 1.** Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline   
+
+2. **Table 2.** Unadjusted and adjusted odds of global sexual dissatisfaction and sexual frequency dissatisfaction at baseline   
+
+3. **Table 3.** Number and percent of women who report sexual satisfaction and sexual frequency satisfaction at baseline by age group and abuse status
+
+Overview
+===============================================================================
+
+Row 1
+-------------------------------------------------------------------------------
+
+### Reported No Abuse at Baseline
+
+```{r}
+n <- nrow(no_abuse) %>% format(., big.mark = ",")
+valueBox(n, color = "#63A2E7")
+```
+
+### Reported Any Abuse at Baseline
+
+```{r}
+n <- nrow(any_abuse) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+# Add color
+```
+
+### Reported Verbal Abuse Only at Baseline
+
+```{r}
+n <- nrow(verbal_only) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+```
+
+### Reported Physical Abuse Only at Baseline
+
+```{r}
+n <- nrow(physical_only) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+```
+
+### Reported Physical and Verbal Abuse at Baseline
+
+```{r}
+n <- nrow(verbal_and_physical) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+```
+
+Row 2
+-------------------------------------------------------------------------------
+
+### Sexual Satisfaction by Reported Abuse at Baseline
+
+```{r}
+baseline_only %>% 
+  group_by(abuse_d_f, satisfied_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>% 
+  ggplot(data = ., aes(x = satisfied_f, y = percent)) +
+    geom_point(aes(color = abuse_d_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent, color = abuse_d_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#63A2E7", "#CC0000"), name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+### Sexual Satisfaction by Reported Abuse at Baseline
+
+```{r}
+baseline_only %>% 
+  group_by(abuse4cat_f, satisfied_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>% 
+  ggplot(data = ., aes(x = satisfied_f, y = percent)) +
+    geom_point(aes(color = abuse4cat_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent, color = abuse4cat_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#63A2E7", "#EDC33B", "#F46D33", "#CC0000"), name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+Row 3
+-------------------------------------------------------------------------------
+
+### Sexual Frequency Satisfaction by Reported Abuse at Baseline
+
+```{r}
+baseline_only %>% 
+  group_by(abuse_d_f, freq_satisfied_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>% 
+  ggplot(data = ., aes(x = freq_satisfied_f, y = percent)) +
+    geom_point(aes(color = abuse_d_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent, color = abuse_d_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#63A2E7", "#CC0000"), name = "Abuse at Baseline") +
+    ggtitle("Sexual Frequency Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+### Sexual Frequency Satisfaction by Reported Abuse at Baseline
+
+```{r}
+baseline_only %>% 
+  group_by(abuse4cat_f, freq_satisfied_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>% 
+  ggplot(data = ., aes(x = freq_satisfied_f, y = percent)) +
+    geom_point(aes(color = abuse4cat_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent, color = abuse4cat_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#63A2E7", "#EDC33B", "#F46D33", "#CC0000"), name = "Abuse at Baseline") +
+    ggtitle("Sexual Frequency Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+Table 1
+===============================================================================
+
+Row 1 {data-height=10}
+-------------------------------------------------------------------------------
+
+### View in Google Docs
+
+[Click here to view Table 1 in Google Docs](https://docs.google.com/document/d/11qm5JMIj2kS7ZxB9PKv6EiTQPXvOP3RBjgw2JGWtE-k/edit?usp=sharing)
+
+### Download in Word Format
+
+[Click here to download Table 1 in Word Format](https://github.com/mbcann01/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
+
+Row 2
+-------------------------------------------------------------------------------
+
+### Reported No Abuse at Baseline
+
+```{r}
+n <- nrow(no_abuse) %>% format(., big.mark = ",")
+valueBox(n, color = "#63A2E7")
+```
+
+### Reported Any Abuse at Baseline
+
+```{r}
+n <- nrow(any_abuse) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+# Add color
+```
+
+### Reported Verbal Abuse Only at Baseline
+
+```{r}
+n <- nrow(verbal_only) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+```
+
+### Reported Physical Abuse Only at Baseline
+
+```{r}
+n <- nrow(physical_only) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+```
+
+### Reported Physical and Verbal Abuse at Baseline
+
+```{r}
+n <- nrow(verbal_and_physical) %>% format(., big.mark = ",")
+valueBox(n, color = "#CC0000")
+```
+
+Row 3
+-------------------------------------------------------------------------------
+
+### Table 1 Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline 
+
+```{r table_01_kable}
+table_01_kable <- read_rds("table_01_kable.rds") # Created in table_1_word.Rmd
+table_01_kable
+```
+
+Table 2
+===============================================================================
+
+Row 1 {data-height=10}
+-------------------------------------------------------------------------------
+
+### View in Google Docs
+
+[Click here to view Table 1 in Google Docs](https://docs.google.com/document/d/11qm5JMIj2kS7ZxB9PKv6EiTQPXvOP3RBjgw2JGWtE-k/edit?usp=sharing)
+
+### Download in Word Format
+
+[Click here to download Table 1 in Word Format](https://github.com/mbcann01/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
+
+Row 2
+-------------------------------------------------------------------------------
+
+```{r table_02_kable}
+table_02_kable <- read_rds("table_02_kable.rds") # Created in table_2_word.Rmd
+table_02_kable
+```
+
+Table 3
+===============================================================================
+
+Row 1 {data-height=10}
+-------------------------------------------------------------------------------
+
+### View in Google Docs
+
+[Click here to view Table 1 in Google Docs](https://docs.google.com/document/d/11qm5JMIj2kS7ZxB9PKv6EiTQPXvOP3RBjgw2JGWtE-k/edit?usp=sharing)
+
+### Download in Word Format
+
+[Click here to download Table 1 in Word Format](https://github.com/mbcann01/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
+
+Row 2
+-------------------------------------------------------------------------------
+
+```{r table_03_kable}
+table_03_kable <- read_rds("table_03_kable.rds") # Created in table_2_word.Rmd
+table_03_kable
+```

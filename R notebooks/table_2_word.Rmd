@@ -1,0 +1,134 @@
+---
+title: "Table 2. Unadjusted and adjusted odds of global sexual dissatisfaction and sexual frequency dissatisfaction at baseline, results from the Women’s Health Initiative (WHI) (N = 83,218)."
+output:
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+```{r load_packages,include=FALSE}
+# Load packages
+library(tidyverse)
+library(mice)
+library(forcats)
+library(broom)
+library(modelr)
+```
+
+```{r load_data, include=FALSE}
+# Load data
+imp <- read_rds(path = "../data/imp.rds")
+```
+
+```{r create_table_header, include=FALSE}
+table_02 <- tibble(
+  `Recent Abuse` = vector(mode = "character", length = 3),
+  `Unsatisfied with Sexual Activity Unadjusted` = vector(mode = "character", length = 3),
+  `Unsatisfied with Sexual Activity Adjusted` = vector(mode = "character", length = 3),
+  `Unsatisfied with Sexual Activity Frequency Unadjusted` = vector(mode = "character", length = 3),
+  `Unsatisfied with Sexual Activity Frequency Adjusted` = vector(mode = "character", length = 3)
+)
+table_02$`Recent Abuse` <- c("", "No", "Yes")
+table_02[1, 2:5] <- "OR (95% CI)"
+table_02[2, 2:5] <- "Reference"
+```
+
+```{r create_table_02, include=FALSE}
+# Unsatisfied with Sexual Activity Unadjusted
+m_mi <- with(imp,
+  glm(
+    fct_rev(satisfied_f) ~ abuse_d_f,
+    family = binomial(link = "logit")
+  )
+)
+mi_est       <- pool(m_mi)
+mi_est       <- summary(mi_est) %>% tidy()
+mi_est$OR    <- exp(mi_est$est) %>% round(2)
+mi_est$lci   <- exp(mi_est$lo.95) %>% round(2)
+mi_est$uci   <- exp(mi_est$hi.95) %>% round(2)
+mi_est$or_95 <- paste0(mi_est$OR, " (", mi_est$lci, " - ", mi_est$uci, ")")
+mi_est       <- select(mi_est, .rownames, or_95)
+
+table_02[3, 2] <- mi_est[2, 2]
+
+# Unsatisfied with Sexual Activity Adjusted
+m_mi <- with(imp,
+  glm(
+    fct_rev(satisfied_f) ~ abuse_d_f + age + race_eth_f + edu4cat_f + 
+      inc5cat_f + married_f + sex_f + ctos_f + parity_f + texpwk + alcswk + 
+      f60caff + smoking_f + horm_f + hormnw_f + ssri_f + lifequal + pshtdep + 
+      bmi + good_health_f + hyst_f + night_sweats_f + hot_flashes_f + 
+      vag_dry_f + incont_f + chronic_disease_f,
+    family = binomial(link = "logit")
+  )
+)
+mi_est       <- pool(m_mi)
+mi_est       <- summary(mi_est) %>% tidy()
+mi_est$OR    <- exp(mi_est$est) %>% round(2)
+mi_est$lci   <- exp(mi_est$lo.95) %>% round(2)
+mi_est$uci   <- exp(mi_est$hi.95) %>% round(2)
+mi_est$or_95 <- paste0(mi_est$OR, " (", mi_est$lci, " - ", mi_est$uci, ")")
+mi_est       <- select(mi_est, .rownames, or_95)
+
+table_02[3, 3] <- mi_est[2, 2]
+
+# Unsatisfied with Sexual Activity Frequency Unadjusted
+m_mi <- with(imp,
+  glm(
+    fct_rev(freq_satisfied_f) ~ abuse_d_f,
+    family = binomial(link = "logit")
+  )
+)
+mi_est       <- pool(m_mi)
+mi_est       <- summary(mi_est) %>% tidy()
+mi_est$OR    <- exp(mi_est$est) %>% round(2)
+mi_est$lci   <- exp(mi_est$lo.95) %>% round(2)
+mi_est$uci   <- exp(mi_est$hi.95) %>% round(2)
+mi_est$or_95 <- paste0(mi_est$OR, " (", mi_est$lci, " - ", mi_est$uci, ")")
+mi_est       <- select(mi_est, .rownames, or_95)
+
+table_02[3, 4] <- mi_est[2, 2]
+
+# Unsatisfied with Sexual Activity Frequency Adjusted
+m_mi <- with(imp,
+  glm(
+    fct_rev(freq_satisfied_f) ~ abuse_d_f + age + race_eth_f + edu4cat_f + 
+      inc5cat_f + married_f + sex_f + ctos_f + parity_f + texpwk + alcswk + 
+      f60caff + smoking_f + horm_f + hormnw_f + ssri_f + lifequal + pshtdep + 
+      bmi + good_health_f + hyst_f + night_sweats_f + hot_flashes_f + 
+      vag_dry_f + incont_f + chronic_disease_f,
+    family = binomial(link = "logit")
+  )
+)
+mi_est       <- pool(m_mi)
+mi_est       <- summary(mi_est) %>% tidy()
+mi_est$OR    <- exp(mi_est$est) %>% round(2)
+mi_est$lci   <- exp(mi_est$lo.95) %>% round(2)
+mi_est$uci   <- exp(mi_est$hi.95) %>% round(2)
+mi_est$or_95 <- paste0(mi_est$OR, " (", mi_est$lci, " - ", mi_est$uci, ")")
+mi_est       <- select(mi_est, .rownames, or_95)
+
+table_02[3, 5] <- mi_est[2, 2]
+```
+
+```{r, echo=FALSE}
+table_02_kable <- knitr::kable(table_02)
+write_rds(table_02_kable, path = "table_02_kable.rds") # Save for use in dashboard
+table_02_kable
+```
+
+1. Sexual satisfaction measured as level of satisfaction with current sexual activities, either with a partner or alone. 
+2. Sexual frequency satisfaction measured as satisfaction with the frequency of sexual activity.
+3. Adjusted for relevant health history (including depression) and sociodemographic characteristics.
+4. Recent abuse measured as physical abuse and/or verbal abuse experienced within one year of baseline.
+
+```{r notes, include=FALSE}
+# After knitting word table:
+# Change all font to TNR 11
+# Left justify title
+# Remove bold from title - except "Table 2"
+# Center columns 3 and above from top to bottom
+# Add bottom border to table
+# Set footnotes to 10 pt font
+```
+
+

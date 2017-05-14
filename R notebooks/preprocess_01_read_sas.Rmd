@@ -1,0 +1,148 @@
+---
+title: "Preprocess 01: Read in SAS Data Set"
+date: '`r Sys.Date()`'
+output:
+  html_notebook:
+    toc: yes
+  html_document:
+    toc: yes
+    toc_float: yes
+    code_folding: show
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+---
+
+* Individual form data sets were previously cleaned and duplicates (by id, days) were removed using SAS. However, after merging forms, there may be new duplicate rows by id/days.
+
+* Individual form data sets were previously merged by id and days in the program merge_forms.
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(lubridate)
+library(haven)
+library(data.table)
+
+# Load functions
+source("../R scripts/functions.R")
+```
+
+```{r}
+# Load data created in SAS
+start <- now()
+merged <- read_sas("~/Dropbox/Research/WHI/MS3226 - Sexual function/whiSexualFunction/data/merged.sas7bdat")
+finish <- now()
+difftime(finish, start)
+```
+
+```{r}
+check_data(merged) # 2,448,638 observations and 815 variables
+```
+
+Quick Save
+
+```{r}
+write_rds(merged, path = "../data/merged.rds")
+```
+
+Load data again (if needed)
+
+```{r}
+# merged <- read_rds("../data/merged.rds")
+# check_data(merged) # 2,448,638 observations and 815 variables
+```
+
+# Set all variable names to lowercase
+
+```{r}
+names(merged) <- tolower(names(merged))
+```
+
+# Subset variables of interest
+
+```{r}
+analysis_01 <- merged %>% 
+  select(
+    # Administrative and Sociodemographic
+	  id, days, age, ager, race_eth, edu4cat, inc5cat, inc5cat_f20, marital, married, sex, ctos, parity,
+
+	  # Health Behavior
+	  texpwk, alcswk, f60alc, f60alcwk, f60caff, smoknow, smoking, horm, hormnw, tccode, livalor, livaln,
+
+	  # Health and Wellness
+	  lifequal, pshtdep, bmi, genhel, hyst, nightswt, hotflash, vagdry, incont, atrophy,
+
+	  # Chronic Disease
+	  arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad,
+
+	  # Sexual Function
+	  sexactiv, satsex, satfrqsx,
+
+	  # Abuse
+	  phyab, verbab
+  )
+check_data(analysis_01) # 2,448,638 observations and 50 variables
+```
+
+
+# Change " " in character vectors to NA
+
+```{r}
+analysis_01 <- analysis_01 %>% 
+  map_if(is.character, function(x) {
+    x[x == ""] <- NA
+    x
+  }) %>% 
+  as.tibble()
+```
+
+# Data checks
+
+```{r}
+check_data(analysis_01) # 2,448,638 observations and 50 variables
+```
+
+```{r}
+count_ids(analysis_01$id) # 161,808 unique women
+```
+
+```{r}
+sum(analysis_01$days == 0) # There are 166,347 day 0's, but only 161,808 women.
+```
+
+Why do some women have more than one day 0?
+
+```{r}
+check <- analysis_01 %>%
+  group_by(id) %>%
+  mutate(
+    day0 = if_else(days == 0, 1L, NA_integer_),
+    count_day0 = sum(day0, na.rm = TRUE)
+  ) %>%
+  filter(count_day0 > 1)
+```
+
+Manually review. The multiple days come from form 44 - medications. Each separate medication has a separate row.
+
+```{r}
+rm(check, start, finish)
+```
+
+Save in R binary format
+
+```{r}
+write_rds(analysis_01, path = "../data/analysis_01.rds")
+```
+
+
+-------------------------------------------------------------------------------
+
+&nbsp;
+
+#### Session Info:
+
+```{r session_info, echo=FALSE}
+sessionInfo()
+```

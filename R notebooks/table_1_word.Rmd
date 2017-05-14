@@ -78,7 +78,7 @@ table1 <- table1 %>%
     variable = if_else(variable == "good_health_f", "Good or better health, n (%)", variable),
     variable = if_else(variable == "hyst_f", "Hysterectomy ever, n (%)", variable),
     variable = if_else(variable == "night_sweats_f", "Night sweats, n (%)", variable),
-    variable = if_else(variable == "hot_flashes_f", "Night sweats, n (%)", variable),
+    variable = if_else(variable == "hot_flashes_f", "Hot flashes, n (%)", variable),
     variable = if_else(variable == "vag_dry_f", "Vaginal or genital dryness, n (%)", variable),
     variable = if_else(variable == "incont_f", "Ever leaked urine, n (%)", variable),
     variable = if_else(variable == "chronic_disease_f", "Chronic Disease, n (%)", variable)

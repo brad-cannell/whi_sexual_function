@@ -194,11 +194,11 @@ Row 1 {data-height=10}
 
 ### View in Google Docs
 
-[Click here to view Table 1 in Google Docs](https://docs.google.com/document/d/11qm5JMIj2kS7ZxB9PKv6EiTQPXvOP3RBjgw2JGWtE-k/edit?usp=sharing)
+[Click here to view Table 1 in Google Docs](https://drive.google.com/open?id=1XUEqxH-Njn5WGHe6tOYN6SomrlVX19vPjo6Te0Gr7Nw)
 
 ### Download in Word Format
 
-[Click here to download Table 1 in Word Format](https://github.com/mbcann01/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
+[Click here to download Table 1 in Word Format](https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
 
 Row 2
 -------------------------------------------------------------------------------
@@ -257,11 +257,11 @@ Row 1 {data-height=10}
 
 ### View in Google Docs
 
-[Click here to view Table 1 in Google Docs](https://docs.google.com/document/d/11qm5JMIj2kS7ZxB9PKv6EiTQPXvOP3RBjgw2JGWtE-k/edit?usp=sharing)
+[Click here to view Table 2 in Google Docs](https://drive.google.com/open?id=1BbPIRRQfFV4kPiOlfYPxveI-xHMmS1XRJJRcpZWuSzY)
 
 ### Download in Word Format
 
-[Click here to download Table 1 in Word Format](https://github.com/mbcann01/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
+[Click here to download Table 2 in Word Format]https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_2_word.docx)
 
 Row 2
 -------------------------------------------------------------------------------
@@ -279,11 +279,11 @@ Row 1 {data-height=10}
 
 ### View in Google Docs
 
-[Click here to view Table 1 in Google Docs](https://docs.google.com/document/d/1XUEqxH-Njn5WGHe6tOYN6SomrlVX19vPjo6Te0Gr7Nw/edit?usp=sharing)
+[Click here to view Table 3 in Google Docs](https://docs.google.com/document/d/1nyuVQ3zuug5T-0zN0WE53LOBJyRN9VTB3_sMB0kPvgU/edit?usp=sharing)
 
 ### Download in Word Format
 
-[Click here to download Table 1 in Word Format](https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
+[Click here to download Table 3 in Word Format](https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_3_word.docx)
 
 Row 2
 -------------------------------------------------------------------------------

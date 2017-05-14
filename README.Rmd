@@ -36,6 +36,8 @@ Building on prior work related to abuse exposure and functional outcomes in post
 
 A subsidiary aim is to conduct cross-sectional descriptive analyses to characterize sexual satisfaction (Global/Frequency) among women according to their recent abuse history and presence/absence of depression.
 
+![](WHI Abuse and Sexual Function Flow Diagram.png)
+
 
 <H2 id = "codes">Data cleaning and analysis codes</H2>
 
@@ -69,11 +71,11 @@ For more information about our analysis process and results, please click in the
 
 [Code used to merge individual forms](/SAS/merge_forms.sas)
 
-[Code used for initial preprocessing of merged data](/SAS/preprocess.sas)
+[Code used for importing SAS data into R](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/a0cbaa72/R%20notebooks/preprocess_01_read_sas.nb.html)
 
-[Code used for further preprocessing of merged data](/stata/preprocess.do)
+[Code used for variable management in R](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/a0cbaa72/R%20notebooks/preprocess_02_variable_management.nb.html)
 
-[Code used for final preprocessing of merged data](https://cdn.rawgit.com/mbcann01/whi_sexual_function/9ca59f2e/R%20notebooks/preprocess.nb.html)
+[Code used for creating final analysis data in R](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/a0cbaa72/R%20notebooks/preprocess_03_analysis_data.nb.html)
 
 ### Codebooks
 

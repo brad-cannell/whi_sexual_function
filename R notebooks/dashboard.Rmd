@@ -261,7 +261,7 @@ Row 1 {data-height=10}
 
 ### Download in Word Format
 
-[Click here to download Table 2 in Word Format]https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_2_word.docx)
+[Click here to download Table 2 in Word Format](https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_2_word.docx)
 
 Row 2
 -------------------------------------------------------------------------------

@@ -1,0 +1,63 @@
+---
+title: "Spot Check Table 3"
+date: "`r Sys.Date()`"
+output: 
+  html_notebook:
+    toc: true
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: show
+    # css: custom-css.css
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(data.table)
+```
+
+Get table 3 numbers right
+
+Add footnotes to table 3
+
+```{r}
+dt[age_group_f == "<50-59", .N, by = .(abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse4cat_f][, percent := N / max(cumsum), by = abuse4cat_f][]
+```
+
+```{r rows.print=36}
+dt[, .N, by = .(age_group_f, abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = .(age_group_f, abuse4cat_f)][, percent := N / max(cumsum), by = .(age_group_f, abuse4cat_f)][order(age_group_f, abuse4cat_f)][]
+```
+
+
+```{r}
+dt[, .N, by = .(abuse_d_f, freq_satisfied_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][]
+```
+
+```{r}
+dt[, .N, by = .(abuse_d_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][]
+```
+
+```{r}
+dt[, .N, by = .(abuse4cat_f, satisfied_f)][, cumsum := cumsum(N), by = abuse4cat_f][, percent := N / max(cumsum), by = abuse4cat_f][]
+```
+
+```{r}
+dt[, .N, by = .(abuse4cat_f, freq_satisfied_f)][, cumsum := cumsum(N), by = abuse4cat_f][, percent := N / max(cumsum), by = abuse4cat_f][]
+```
+
+```{r}
+dt[, .N, by = .(abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse4cat_f][, percent := N / max(cumsum), by = abuse4cat_f][]
+```
+
+```{r}
+dt[, .N, by = c("abuse4cat_f", "satfrqsx_f")][
+      , cs := cumsum(N), by = abuse4cat_f][
+        , percent := round(N / max(cs) * 100, 1), by = abuse4cat_f][
+          , n_percent := paste0(format(N, big.mark = ","), " (", percent, ")")][
+            , list(abuse4cat_f, satfrqsx_f, n_percent)][
+              satfrqsx_f == "More often", list(abuse4cat_f, n_percent)]
+```
+

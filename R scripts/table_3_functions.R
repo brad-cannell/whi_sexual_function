@@ -48,12 +48,16 @@ t3_section <- function(dt, group, outcome, desire = FALSE, ...){
 
   # Select the cells to pass directly into the table_03 shell
   args <- as.list(match.call())
-  if (args$group == "abuse_d_f" & args$outcome == "satisfied_f"){
-    out[]
-  } else if (args$group == "abuse_d_f" & args$outcome == "freq_satisfied_f"){
-    out[, 2:3]
-  } else if (args$group == "abuse_d_f" & desire == TRUE){
-    out[, 2]
+  if (args$group == "abuse_d_f") {
+    # Make sure output rows are in the correct order for table_03
+    out <- out[order(abuse_d_f), ]
+    if (args$outcome == "satisfied_f"){
+      out[]
+    } else if (args$outcome == "freq_satisfied_f"){
+      out[, 2:3]
+    } else if (desire == TRUE){
+      out[, 2]
+    }
   } else if (args$group == "abuse4cat_f") {
     out <- out[out$abuse4cat_f != "Did not experience abuse", ] # Drop this row
     out$abuse4cat_f <- factor(as.character(out$abuse4cat_f),

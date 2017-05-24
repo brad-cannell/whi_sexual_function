@@ -1,7 +1,7 @@
 ---
 title: Table 3. Number and percent of women who report sexual satisfaction1 and sexual
   frequency satisfaction2 at baseline by age group and abuse status, results from
-  the Women’s Health Initiative (WHI) (N = 78,480).
+  the Women’s Health Initiative (WHI) (N = 78,416).
 output:
   word_document:
     reference_docx: word_style_template_01.docx
@@ -29,7 +29,10 @@ baseline_t3 <- baseline_only %>%
   map_if(is.factor, as.character) %>% 
   as_tibble()
 rm(baseline_only)
-check_data(baseline_t3) # 78,480 observations and 6 variables
+```
+
+```{r eval=FALSE, echo=FALSE}
+check_data(baseline_t3) # 78,416 observations and 6 variables
 ```
 
 ```{r, as_dt, echo=FALSE}

@@ -24,20 +24,20 @@ Get table 3 numbers right
 Add footnotes to table 3
 
 ```{r}
-dt[age_group_f == "<50-59", .N, by = .(abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse4cat_f][, percent := N / max(cumsum), by = abuse4cat_f][]
+dt[age_group_f == "70-79+", .N, by = .(abuse_d_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][satfrqsx_f == "More often"]
 ```
 
 ```{r rows.print=36}
-dt[, .N, by = .(age_group_f, abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = .(age_group_f, abuse4cat_f)][, percent := N / max(cumsum), by = .(age_group_f, abuse4cat_f)][order(age_group_f, abuse4cat_f)][]
+dt[, .N, by = .(age_group_f, abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = .(age_group_f, abuse4cat_f)][, percent := N / max(cumsum), by = .(age_group_f, abuse4cat_f)][order(age_group_f, abuse4cat_f)][age_group_f == "60-69"]
 ```
 
 
 ```{r}
-dt[, .N, by = .(abuse_d_f, freq_satisfied_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][]
+dt[age_group_f == "60-69", .N, by = .(abuse_d_f, freq_satisfied_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][]
 ```
 
 ```{r}
-dt[, .N, by = .(abuse_d_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][]
+dt[age_group_f == "60-69", .N, by = .(abuse_d_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][]
 ```
 
 ```{r}
@@ -53,11 +53,19 @@ dt[, .N, by = .(abuse4cat_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse4cat_
 ```
 
 ```{r}
-dt[, .N, by = c("abuse4cat_f", "satfrqsx_f")][
-      , cs := cumsum(N), by = abuse4cat_f][
-        , percent := round(N / max(cs) * 100, 1), by = abuse4cat_f][
+out <- dt[age_group_f == "60-69", .N, by = c("abuse_d_f", "satfrqsx_f")][
+      , cs := cumsum(N), by = abuse_d_f][
+        , percent := round(N / max(cs) * 100, 1), by = abuse_d_f][
           , n_percent := paste0(format(N, big.mark = ","), " (", percent, ")")][
-            , list(abuse4cat_f, satfrqsx_f, n_percent)][
-              satfrqsx_f == "More often", list(abuse4cat_f, n_percent)]
+            , list(abuse_d_f, satfrqsx_f, n_percent)][
+              satfrqsx_f == "More often", list(abuse_d_f, n_percent)]
+
+out <- out[order(abuse_d_f), ]
+out
+
+out <- out[out$abuse4cat_f != "Did not experience abuse", ]
+out$abuse4cat_f <- factor(as.character(out$abuse4cat_f),
+                              levels = c("Verbal abuse only", "Physical abuse only", "Physical and verbal abuse"))
+ out[order(out$abuse4cat_f), ]
 ```
 

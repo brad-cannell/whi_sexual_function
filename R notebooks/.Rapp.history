@@ -1,1 +1,2 @@
 load("/Users/bradcannell/Google Drive/Research/WHI/MS3226 - Sexual function/whi_sexual_function/R notebooks/table_01_kable.rds")
+load("/Users/bradcannell/Google Drive/Research/WHI/MS3226 - Sexual function/whi_sexual_function/R notebooks/table_03_kable.rds")

@@ -55,7 +55,7 @@ t3_section <- function(dt, group, outcome, desire = FALSE, ...){
   } else if (args$group == "abuse_d_f" & desire == TRUE){
     out[, 2]
   } else if (args$group == "abuse4cat_f") {
-    out <- out[-1, ]
+    out <- out[out$abuse4cat_f != "Did not experience abuse", ] # Drop this row
     out$abuse4cat_f <- factor(as.character(out$abuse4cat_f),
                               levels = c("Verbal abuse only", "Physical abuse only", "Physical and verbal abuse"))
     if (args$outcome == "satisfied_f") {
@@ -65,7 +65,7 @@ t3_section <- function(dt, group, outcome, desire = FALSE, ...){
     } else if (args$outcome == "freq_satisfied_f"){
       out[order(out$abuse4cat_f), 2:3]
     } else if (args$group == "abuse4cat_f" & desire == TRUE){
-      out[, 2]
+      out[order(out$abuse4cat_f), 2]
     }
   }
 }

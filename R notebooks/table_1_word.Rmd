@@ -60,7 +60,7 @@ table1 <- table1 %>%
     variable = if_else(variable == "married_f", "Married, n (%)", variable),
     variable = if_else(variable == "sex_f", "Who you have had sex with, n (%)", variable),
     variable = if_else(variable == "ctos_f", "Clinical trial or observational study, n (%)", variable),
-    variable = if_else(variable == "parity_f", "Parity, n (mean)", variable),
+    variable = if_else(variable == "parity_f", "Parity, n (%)", variable),
 
     # Health Behavior
     variable = if_else(variable == "texpwk", "Physical activity (MET-hours/week), n (mean)", variable),

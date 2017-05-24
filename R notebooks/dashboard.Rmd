@@ -11,6 +11,7 @@ output:
 library(flexdashboard)
 library(tidyverse)
 library(ggrepel)
+library(kableExtra)
 ```
 
 ```{r load_data}
@@ -285,10 +286,14 @@ Row 1 {data-height=10}
 
 [Click here to download Table 3 in Word Format](https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_3_word.docx)
 
-Row 2
+Row 2 {data-height=30}
+-------------------------------------------------------------------------------
+**Table 3.** Number and percent of women who report sexual satisfaction<sup>1</sup> and sexual frequency satisfaction<sup>2</sup> at baseline by age group and abuse status, results from the Women’s Health Initiative (WHI) (N = 78,416)<sup>3</sup>. 
+
+Row 3
 -------------------------------------------------------------------------------
 
 ```{r table_03_kable}
-table_03_kable <- read_rds("table_03_kable.rds") # Created in table_2_word.Rmd
+table_03_kable <- read_rds("table_03_kable.rds") # Created in table_3_word.Rmd
 table_03_kable
 ```

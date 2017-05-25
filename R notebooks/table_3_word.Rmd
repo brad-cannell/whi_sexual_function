@@ -11,7 +11,6 @@ output:
 # Load packages
 library(tidyverse)
 library(data.table)
-library(xtable)
 
 # Load functions
 source("../R scripts/functions.R")

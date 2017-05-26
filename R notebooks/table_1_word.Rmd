@@ -8,6 +8,9 @@ output:
 ```{r setup, include=FALSE}
 # Load packages
 library(tidyverse)
+
+# Load functions
+source("../R scripts/table_1_functions.R")
 ```
 
 ```{r load_data, include=FALSE}
@@ -19,9 +22,22 @@ physical_only <- read_rds(path = "../data/physical_only.rds")
 verbal_and_physical <- read_rds(path = "../data/verbal_and_physical.rds")
 ```
 
-```{r load_functions, include=FALSE}
-source("../R scripts/table_1_functions.R")
+<!-- Group N's -->
+
+```{r Ns, include=FALSE}
+# Add n's to table
+table_01 <- tibble(
+  variable = "",
+  class = "",
+  no_abuse = get_n(no_abuse) %>% as.character(),
+  any_abuse = get_n(any_abuse) %>% as.character(),
+  verbal_only = get_n(verbal_only) %>% as.character(),
+  physical_only = get_n(physical_only) %>% as.character(),
+  verbal_and_physical = get_n(verbal_and_physical) %>% as.character()
+)
 ```
+
+<!-- Fill in values -->
 
 ```{r create_table_01, include=FALSE}
 compare_groups <- c("no_abuse", "any_abuse", "verbal_only", "physical_only",
@@ -46,13 +62,13 @@ phys_hlth1 <- categorical_rows(variables = c("good_health_f", "hyst_f",
   "night_sweats_f", "hot_flashes_f", "vag_dry_f", "incont_f",
   "chronic_disease_f"), groups = compare_groups)
 
-table1 <- bind_rows(demo1, demo2, behavior1, behavior2, ment_hlth1, phys_hlth1)
+table_01 <- rbind(table_01, demo1, demo2, behavior1, behavior2, ment_hlth1, phys_hlth1)
 
 # Improve readability
-table1 <- table1 %>%
+table_01 <- table_01 %>%
   mutate(
     # Sociodemographics
-    variable = if_else(variable == "age", "Age, n (mean)", variable),
+    variable = if_else(variable == "age", "Age, mean (sd)", variable),
     variable = if_else(variable == "age_group_f", "Age group, n (%)", variable),
     variable = if_else(variable == "race_eth_f", "Race and Ethnicity, n (%)", variable),
     variable = if_else(variable == "edu4cat_f", "Education, n (%)", variable),
@@ -63,18 +79,18 @@ table1 <- table1 %>%
     variable = if_else(variable == "parity_f", "Parity, n (%)", variable),
 
     # Health Behavior
-    variable = if_else(variable == "texpwk", "Physical activity (MET-hours/week), n (mean)", variable),
-    variable = if_else(variable == "alcswk", "Alcohol servings per week, n (mean)", variable),
-    variable = if_else(variable == "f60caff", "Dietary caffeine (mg), n (mean)", variable),
+    variable = if_else(variable == "texpwk", "Physical activity (MET-hours/week), mean (sd)", variable),
+    variable = if_else(variable == "alcswk", "Alcohol servings per week, mean (sd)", variable),
+    variable = if_else(variable == "f60caff", "Dietary caffeine (mg), mean (sd)", variable),
     variable = if_else(variable == "smoking_f", "Smoking status, n (%)", variable),
     variable = if_else(variable == "horm_f", "Female hormones ever, n (%)", variable),
     variable = if_else(variable == "hormnw_f", "Female hormones now, n (%)", variable),
     variable = if_else(variable == "ssri_f", "Taking SSRI, n (%)", variable),
 
     # Health and Wellness
-    variable = if_else(variable == "lifequal", "Quality of life, n (mean)", variable),
-    variable = if_else(variable == "pshtdep", "Shortened CES-D/DIS, n (mean)", variable),
-    variable = if_else(variable == "bmi", "Body Mass Index, n (mean)", variable),
+    variable = if_else(variable == "lifequal", "Quality of life, mean (sd)", variable),
+    variable = if_else(variable == "pshtdep", "Shortened CES-D/DIS, mean (sd)", variable),
+    variable = if_else(variable == "bmi", "Body Mass Index, mean (sd)", variable),
     variable = if_else(variable == "good_health_f", "Good or better health, n (%)", variable),
     variable = if_else(variable == "hyst_f", "Hysterectomy ever, n (%)", variable),
     variable = if_else(variable == "night_sweats_f", "Night sweats, n (%)", variable),
@@ -84,11 +100,8 @@ table1 <- table1 %>%
     variable = if_else(variable == "chronic_disease_f", "Chronic Disease, n (%)", variable)
   )
 
-# Remove blank rows - kable doesn't like them
-table1 <- table1 %>% filter(variable != "")
-
 # Remove duplicate variable names for categorical variables
-table1 <- table1 %>%
+table_01 <- table_01 %>%
   group_by(variable) %>%
   mutate(
     x = duplicated(variable),
@@ -107,7 +120,7 @@ rm(behavior1, behavior2, demo1, demo2, demo3, ment_hlth1, ment_hlth2,
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-table_01_kable <- knitr::kable(table1, col.names = c(
+table_01_kable <- knitr::kable(table_01, col.names = c(
   "Characteristic", "Class", 
   "No Abuse", 
   "Any Abuse", 

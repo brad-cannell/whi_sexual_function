@@ -5,6 +5,13 @@
 # 2017-03-27
 # ==============================================================================
 
+# Get group sizes for second row of table
+# ==============================================================================
+get_n <- function(x, ...) {
+  summarise(x, n = n()) %>% 
+    mutate(n = paste0("N = ", format(n, big.mark = ",")))
+}
+
 # Function to calculate n and percent for a single categorical variable
 # ==============================================================================
 n_percent <- function(x, ...) {
@@ -18,6 +25,7 @@ n_percent <- function(x, ...) {
   percent$Freq <- paste0(n$., " (", percent$Freq, " %)")
   # Rename columns
   names(percent) <- c("class", "statistics")
+  percent$class  <- as.character(percent$class)
   percent
 }
 
@@ -35,7 +43,21 @@ n_mean <- function(x, ...) {
   out
 }
 
-# Function to call n_mean on all continuous variables for all groups and horizontally
+# Function to calculate mean and sd for continuous variables
+# ==============================================================================
+mean_sd <- function(x, ...) {
+  # Calculate mean and format to always show 1 decimal place
+  mean <- mean(x, na.rm = TRUE) %>% round(., 2) %>% format(., nsmall = 2)
+  # Calculate sd and format to always show 1 decimal place
+  sd <- sd(x, na.rm = TRUE) %>% round(., 2) %>% format(., nsmall = 2)
+  # Paste together n and mean
+  mean_sd <- paste0(mean, " (", sd, ")")
+  # Coerce to data frame
+  out <- data.frame(class = "", statistics = mean_sd)
+  out
+}
+
+# Function to call on all continuous variables for all groups and horizontally
 # join all groups together into a single data frame
 # ==============================================================================
 continuous_rows <- function(variables, groups, ...) {
@@ -43,7 +65,7 @@ continuous_rows <- function(variables, groups, ...) {
   # Function for use in if/else below
   build_output_df <- function(x, ...) {
     # Calculate statistics
-    out <- n_mean(x)
+    out <- mean_sd(x)
     # Add variable name
     out[["variable"]] <- var_name
     # Reorder columns
@@ -52,9 +74,6 @@ continuous_rows <- function(variables, groups, ...) {
     names(out)[3] <- compare_groups[[g]]
     out
   }
-
-  # Create blank row
-  blank_row <- data.frame(variable = "", class = "")
 
   for (i in seq_along(variables)) {
     # Grab variable name
@@ -74,15 +93,15 @@ continuous_rows <- function(variables, groups, ...) {
       }
     }
 
-    # Row bind variables
-    # Insert blank row between variables
+    # Row bind variables 
     if (i == 1) {
-      all_rows <- bind_rows(row, blank_row)
+      all_rows <- row
     } else {
       temp <- row
-      all_rows <- bind_rows(all_rows, temp, blank_row)
+      all_rows <- bind_rows(all_rows, temp)
     }
   }
+  
   # Clean up NA's
   all_rows <- all_rows %>%
     map_if(is.factor, as.character) %>%
@@ -111,9 +130,6 @@ categorical_rows <- function(variables, groups, ...) {
     out
   }
 
-  # Create blank row
-  blank_row <- data.frame(variable = "", class = "")
-
   for (i in seq_along(variables)) {
     # Grab variable name
     var_name <- variables[[i]]
@@ -135,10 +151,10 @@ categorical_rows <- function(variables, groups, ...) {
     # Row bind variables
     # Insert blank row between variables
     if (i == 1) {
-      all_rows <- bind_rows(row, blank_row)
+      all_rows <- row
     } else {
       temp <- row
-      all_rows <- bind_rows(all_rows, temp, blank_row)
+      all_rows <- bind_rows(all_rows, temp)
     }
   }
   # Clean up NA's

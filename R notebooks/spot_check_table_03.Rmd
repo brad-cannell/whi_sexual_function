@@ -3,14 +3,7 @@ title: "Spot Check Table 3"
 date: "`r Sys.Date()`"
 output: 
   html_notebook:
-    toc: true
-  html_document:
-    toc: true
-    toc_float: true
-    code_folding: show
-    # css: custom-css.css
-  word_document:
-    reference_docx: word_style_template_01.docx
+    toc: false
 ---
 
 ```{r load_packages, message=FALSE}
@@ -18,10 +11,6 @@ output:
 library(tidyverse)
 library(data.table)
 ```
-
-Get table 3 numbers right
-
-Add footnotes to table 3
 
 ```{r}
 dt[age_group_f == "70-79+", .N, by = .(abuse_d_f, satfrqsx_f)][, cumsum := cumsum(N), by = abuse_d_f][, percent := N / max(cumsum), by = abuse_d_f][satfrqsx_f == "More often"]

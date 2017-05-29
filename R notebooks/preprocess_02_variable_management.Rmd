@@ -943,9 +943,16 @@ write_rds(analysis_07, path = "../data/analysis_07.rds")
 
 * Distribute time-invariant variables across all observations (e.g. race)
 
-* Carry backward "have you ever" variables (e.g. diabetes ever)
+* Distribute "have you ever" variables (e.g. diabetes ever)
 
 * Carry forward relatively time-stable variables (e.g. income)
+
+```{r message=FALSE}
+library(tidyverse)
+library(data.table)
+library(zoo)
+source("../R scripts/functions.R")
+```
 
 ```{r load_analysis_07}
 # Load data
@@ -959,7 +966,7 @@ dt <- as.data.table(analysis_07)
 
 ## Distributing selected covariates across observations
 
-```{r}
+```{r time_invariant}
 # Variables that are either time-invariant, or considered to be nearly time-invariant in this sample
 time_invariant <- c("ager", "race_eth", "edu4cat","sex", "ctos", "parity")
 
@@ -969,14 +976,21 @@ dt[, (time_invariant) := lapply(.SD, function(x) na.omit(x)[1]),
    by = id]
 ```
 
-```{r}
-# Carry forward "have you ever" variables
+```{r ever_vars}
+# Distribute "have you ever" variables
+# If they say "no", then all previous observations should be no. If you've never had diabetes on day 100, then you didn't have diabetes on day 99.
+# If they say "Yes", then all future observations should be yes. If you have diabetes on day 100, then you have ever had diabetes on day 200.
 ever_vars <- c("horm", "hyst", "arthrit", "brca_f30", "cervca", "endo_f30", "ovryca", "cvd", "diab", "hypt",
                "osteopor", "pad")
 
-dt[, (ever_vars) := lapply(.SD, function(x) na.locf(x, na.rm = FALSE)), 
+dt[, (ever_vars) := lapply(.SD, distribute_ever), 
    .SDcols = ever_vars, 
    by = id]
+```
+
+```{r check_logic}
+# Checking for 0's after 1's in the ever vars
+# dt[pad == 9] # None
 ```
 
 ```{r}
@@ -1707,6 +1721,7 @@ dt[!is.na(cd_count), chronic_disease := if_else(cd_count == 0,  0, # None
 
 # Create factor version
 dt[, chronic_disease_f := factor(chronic_disease, 
+                                 levels = c(0:14),
                                  labels = c("None", "2 conditions", "3 conditions", "4 conditions", 
                                             "5+ conditions", "Arthritis Only", "Breast Cancer Only", 
                                             "Cervical Cancer Only", "Endometrial Cancer Only", 

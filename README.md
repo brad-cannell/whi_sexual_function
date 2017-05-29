@@ -78,7 +78,7 @@ For more information about our analysis process and results, please click in the
 
 5.  [Code used to clean and manage covariates of interest](/R%20notebooks/preprocess_05_covariates.md)
 
-6.  [Code used to create baseline subset data](/R%20notebooks/preprocess_01_read_sas.md)
+6.  [Code used to subset baseline data](/R%20notebooks/preprocess_06_subset_baseline.md)
 
 7.  [Code used for multiple imputation](/R%20notebooks/preprocess_01_read_sas.md)
 

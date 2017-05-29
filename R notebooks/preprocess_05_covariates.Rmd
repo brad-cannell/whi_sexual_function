@@ -1,0 +1,841 @@
+---
+title: "Preprocess 05: Clean and Manage Covariates"
+date: "`r Sys.Date()`"
+output: 
+  github_document: default
+---
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(data.table)
+library(zoo)
+library(gmodels)
+
+# Load functions
+source("../R scripts/functions.R")
+```
+
+-------------------------------------------------------------------------------
+
+# Cleaning covariates
+
+-------------------------------------------------------------------------------
+
+* Recode missing
+
+* Create factor variables
+
+* Distribute time-invariant variables across all observations (e.g. race)
+
+* Distribute "have you ever" variables (e.g. diabetes ever)
+
+* Carry forward relatively time-stable variables (e.g. income)
+
+```{r load_analysis_07}
+# Load data
+analysis_07 <- read_rds("../data/analysis_07.rds")
+check_data(analysis_07) # 1,432,448 observations and 91 variables
+```
+
+```{r}
+dt <- as.data.table(analysis_07)
+```
+
+## Distributing selected covariates across observations
+
+```{r time_invariant}
+# Variables that are either time-invariant, or considered to be nearly time-invariant in this sample
+time_invariant <- c("ager", "race_eth", "edu4cat","sex", "ctos", "parity")
+
+# Distribute time-invariant variables across all observations within id
+dt[, (time_invariant) := lapply(.SD, function(x) na.omit(x)[1]), 
+   .SDcols = time_invariant, 
+   by = id]
+```
+
+```{r check_ever_vars}
+# Check "have you ever" variables
+ever_vars <- c("horm", "hyst", "arthrit", "brca_f30", "cervca", "endo_f30", "ovryca", "cvd", "diab", 
+               "hypt", "osteopor", "pad")
+dt[, c("id", "days", ever_vars), with = FALSE]
+```
+
+```{r ever_vars}
+# Distribute "have you ever" variables
+# If they say "no", then all previous observations should be no. If you've never had diabetes on day 100, then you didn't have diabetes on day 99.
+# If they say "Yes", then all future observations should be yes. If you have diabetes on day 100, then you have ever had diabetes on day 200.
+dt[, (ever_vars) := lapply(.SD, distribute_ever), 
+   .SDcols = ever_vars, 
+   by = id]
+```
+
+```{r check_ever_vars_again}
+dt[, c("id", "days", ever_vars), with = FALSE]
+```
+
+
+```{r check_logic}
+# Checking for 0's after 1's in the ever vars
+# dt[pad == 9] # None
+```
+
+```{r}
+# Save progress
+analysis_08 <- dt
+write_rds(analysis_08, path = "../data/analysis_08.rds")
+```
+
+```{r}
+# Load data
+analysis_08 <- read_rds("../data/analysis_08.rds")
+check_data(analysis_08) # 1,432,448 observations and 91 variables
+```
+
+```{r}
+dt <- as.data.table(analysis_08)
+```
+
+## Sociodemographic covariates
+
+### Age
+
+[Age at screening](https://www.whi.org/researchers/data/WhiDataDict/dem_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(age)), Mean = mean(age), SD = sd(age))] # Over all observations
+```
+
+### Age group
+
+[Age group at screening](https://www.whi.org/researchers/data/WhiDataDict/dem_ctos_inv.pdf)
+
+```{r}
+# Rename ager
+setnames(dt, "ager", "age_group")
+
+# Create factor
+dt[, age_group_f := factor(age_group, labels = c("<50-59", "60-69", "70-79+"))]
+
+# Descriptives at first obs
+dt[obs == 1, .(Women = .N), by = age_group_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+### Race / Ethnicity
+
+[Ethnicity](https://www.whi.org/researchers/data/WhiDataDict/dem_ctos_inv.pdf)
+
+```{r}
+# Create factor
+dt[, race_eth_f := factor(race_eth, labels = c("White", "AA", "Hispanic", "Other"))]
+
+# Descriptives at first obs
+dt[obs == 1, .(Women = .N), by = race_eth_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+# dt %>% filter(is.na(race_eth)) %>% select(id, days, race_eth) %>% summarise(length(unique(id)))
+# 413 people matches WHI documentation
+```
+
+### Education
+
+[Edcuation](https://www.whi.org/researchers/data/WhiDataDict/dem_ctos_inv.pdf)
+
+```{r}
+# Create factor
+dt[, edu4cat_f := factor(edu4cat, labels = c("<HS", "HS Grad", "Some College or Tech School", "College Grad"))]
+
+# Descriptives at first obs
+dt[obs == 1][order(edu4cat_f), .(Women = .N), by = edu4cat_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+# 1,216 missing matches WHI documentation
+```
+
+### Income
+
+[Family income](https://www.whi.org/researchers/data/WhiDataDict/dem_ctos_inv.pdf)
+
+```{r}
+# How stable is income over time?
+
+# Take a look
+# select(dt, id, days, inc5cat, inc5cat_f20)
+
+# How often are inc5cat and inc5cat_f20 measured on the same day?
+# 3,148
+# On those 3,148 days, how often do inc5cat and inc5cat_f20 disagree?
+# dt[!is.na(inc5cat) & !is.na(inc5cat_f20), .(id, days, inc5cat, inc5cat_f20)][inc5cat != inc5cat_f20]
+# All on day zero and all agree
+
+# Create a combined income variable
+dt[!is.na(inc5cat) & !is.na(inc5cat_f20), combined := inc5cat]
+dt[is.na(combined), combined := sum(inc5cat, inc5cat_f20, na.rm = TRUE), by = .(id, days)]
+dt[combined == 0, combined := NA_real_]
+# select(dt, id, days, inc5cat, inc5cat_f20, combined)
+
+# Does combined change from measure to measure?
+dt[!is.na(combined), length(unique(combined)) != 1, by = id][
+  , .(`Women with Income` = .N, `Income change` = sum(V1))]
+```
+
+Income is time-invariant. Will distribute across all observations.
+
+```{r}
+# Drop unneeded income variables
+dt[, c("inc5cat_f20", "combined") := NULL]
+
+# Distribute across observations
+dt[, inc5cat := na.omit(inc5cat)[1], by = id]
+
+# Create factor
+dt[, inc5cat_f := factor(inc5cat, labels = c("20,000 or less", "20-34,999", "35-49,999", "50-74,999",
+                                             "75,000+"))]
+
+# Descriptives at first obs
+dt[days == 0][order(inc5cat_f), .(Women = .N), by = inc5cat_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+# 10,874 missing match WHI documentation for missing and don't know.
+```
+
+### Marital status
+
+* [Married](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf) is worded, "Are you currently married or in an intimate relationship with at least one person?"
+
+* [Marital](https://www.whi.org/researchers/data/WhiDataDict/f20_ctos_inv.pdf) is worded, "What is your current marital status? (Mark the one that best describes you.)":   
+1. Never married    
+2. Divorced or separated    
+3. Widowed   
+4. Presently married   
+5. Marriage-like relationship    
+
+Recode the marital to 1, 2, and 3 vs. 4 & 5. Should make married and marital roughly comparible.
+
+```{r}
+dt[, marital := if_else(marital %in% c(1, 2, 3), 0, 
+                if_else(marital %in% c(4, 5),    1,
+                NA_real_))]
+# select(dt, id, days, married, marital)
+```
+
+```{r}
+# Carry forward married
+dt[, married := na.locf(married, na.rm = FALSE), by = id]
+
+# Carry forward marital
+dt[, marital := na.locf(marital, na.rm = FALSE), by = id]
+# select(dt, id, days, married, marital)
+```
+
+```{r}
+# Which variable has the greatest amount of missing?
+
+cat("Number of missing values for married =", format(sum(is.na(dt$married)), big.mark = ",")) # 373,512
+cat("\n")
+cat("Number of missing values for marital =", format(sum(is.na(dt$marital)), big.mark = ",")) # 263,161
+```
+
+Marital has fewer missing values. 
+
+We previously tried augmenting missing values in marital with data from married - when available. However, sometime there were disagreements. Trying to pick a winner in the disagreements may introduce bias. Setting disagreements to NA results in a greater number of missing than just using marital as it is. So, we'll just use marital as it is.
+
+```{r}
+# Drop married and rename marital
+dt$married <- NULL
+setnames(dt, "marital", "married")
+```
+
+```{r}
+# Create factor version
+dt[, married_f := factor(married, labels = c("Not married or intimate relationship", 
+                                             "Married or intimate relationship"))]
+
+# Descriptives at day 0
+dt[days == 0][order(married_f), .(Women = .N), by = married_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+### Sexual orientation
+
+[Regardless of whether you are currently sexually active, which response best describes who you
+have had sex with over your adult lifetime?](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Recode 9 to missing
+dt[sex == 9, sex := NA_real_]
+
+# Create factor
+dt[, sex_f := factor(sex, labels = c("Have never had sex", "Sex with a woman or with women", 
+                                     "Sex with a man or with men", "Sex with both men and women"))]
+
+# Descriptives at day 0
+dt[days == 0][order(sex_f), .(Women = .N), by = sex_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+### CTOS
+
+[Study component](https://www.whi.org/researchers/data/WhiDataDict/dem_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, ctos_f := factor(ctos, labels = c("CT", "OS"))]
+
+# Descriptives at first observation
+dt[obs == 1, .(Women = .N), by = ctos_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+### Parity
+
+[Number of Term Pregnancies. Computed from Form 31, questions 7, 7.6 and 7.7. Number of pregnancies lasting at least 6 months. Equals -1 if never pregnant.](https://www.whi.org/researchers/data/WhiDataDict/f31_ctos_inv.pdf)
+
+```{r}
+# Recode -1 (never pregnant) to 0 (Never had term pregnancy)
+dt[parity == -1, parity := 0]
+
+# Create factor version
+dt[, parity_f := factor(parity, labels = c("Never had term pregnancy", "1", "2", "3", "4", "5+"))]
+
+# Descriptives at first observation
+dt[obs == 1][order(parity_f), .(Women = .N), by = parity_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+## Health behaviors
+
+### Physical activity
+
+[Total energy expend from recreational phys activity (MET-hours/week). Computed from Form 34, questions 6, 6.1, 6.2, 7.1, 7.2, 7.3, 7.4, 7.5, and 7.6. Total MET-hours per week. Expenditure of energy from recreational physical activity (includes walking, mild, moderate and strenuous physical activity in kcal/week/kg).](https://www.whi.org/researchers/data/WhiDataDict/f34_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(texpwk)), Mean = mean(texpwk, na.rm = TRUE), SD = sd(texpwk, na.rm = TRUE))]
+```
+
+### Alcohol use
+
+[Alcohol servings per week. Computed from Form 34, questions 3 and 3.1; Form 60 (FFQ), wine, beer and liquor servings. Number of servings per week of beer, wine and/or liquor based on a medium serving size which is 12oz of beer, 6oz of wine and 1.5 oz of liquor. If all three variables are missing, set to missing.](https://www.whi.org/researchers/data/WhiDataDict/f34_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(alcswk)), Mean = mean(alcswk, na.rm = TRUE), SD = sd(alcswk, na.rm = TRUE))]
+```
+
+[Dietary Alcohol (g). Includes alcohol from beer, wine, and liquor, as well as from foods. Some foods contain alcohol due to minute amounts of alcohol in vanilla extract, almond extract etc used in baking.](https://www.whi.org/researchers/data/WhiDataDict/f60_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(f60alc)), Mean = mean(f60alc, na.rm = TRUE), SD = sd(f60alc, na.rm = TRUE))]
+```
+
+[Form 60 (FFQ), wine, beer and liquor servings. Number of servings per week of beer, wine and/or liquor based on a medium serving size which is 12oz of beer, 6oz of wine and 1.5 oz of liquor. If all three variables are missing, set to missing.](https://www.whi.org/researchers/data/WhiDataDict/f60_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(f60alcwk)), Mean = mean(f60alcwk, na.rm = TRUE), SD = sd(f60alcwk, na.rm = TRUE))]
+```
+
+### Caffeine use
+
+[Dietary Caffeine (mg)](https://www.whi.org/researchers/data/WhiDataDict/f60_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(f60caff)), Mean = mean(f60caff, na.rm = TRUE), SD = sd(f60caff, na.rm = TRUE))]
+```
+
+### Smoking status
+
+[Do you smoke cigarettes now](https://www.whi.org/researchers/data/WhiDataDict/f35_ct_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, smoknow_f := factor(smoknow, labels = c("No", "Yes"))]
+
+# Tag first non-missing value
+dt[!is.na(smoknow), first_smoknow := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_smoknow == 1][order(smoknow_f), .(Women = .N), by = smoknow_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# How many never respond?
+dt[, all(is.na(first_smoknow)), by = id][, .(`Never respond` = sum(V1))][] # 49,279
+```
+
+[Smoking status. Computed from Form 34, questions 1, 1.2, and 1.5. Combines questions into a three category smoking status variable (never/past/current).](https://www.whi.org/researchers/data/WhiDataDict/f34_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, smoking_f := factor(smoking, labels = c("Never smoked", "Past smoker", "Current smoker"))]
+
+# Tag first non-missing value
+dt[!is.na(smoking), first_smoking := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_smoking == 1, .(Women = .N), by = smoking_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# How many never respond?
+dt[, all(is.na(first_smoking)), by = id][, .(`Never respond` = sum(V1))][] # 2,126
+```
+
+Smoking is much more complete. Use it in the analysis.
+
+```{r}
+# Clean up
+dt[, c("smoknow", "smoknow_f", "first_smoknow", "first_smoking") := NULL]
+```
+
+### Hormones ever
+
+[Female hormones ever. Did you ever use any female hormones like estrogen (Premarin) or progesterone (Provera)? These might be pills, skin patches, implants, creams, suppositories, shots, or birth control pills. (This does not include birth control pills you used before you were 50.)](https://www.whi.org/researchers/data/WhiDataDict/f2_ctos_inv.pdf)
+
+```{r}
+# Create a factor version
+dt[, horm_f := factor(horm, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[obs == 1, .(Women = .N), by = horm_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+### Hormones now
+
+[Female hormones now. Are you using female hormones now?](https://www.whi.org/researchers/data/WhiDataDict/f2_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, hormnw_f := factor(hormnw, labels = c("No", "Yes"))]
+
+# Tag first non-missing value
+dt[!is.na(hormnw), first_hormnw := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_hormnw == 1, .(Women = .N), by = hormnw_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Clean up
+dt[, first_hormnw := NULL]
+```
+
+### Taking SSRI
+
+[Medication Therapeutic Class Code](https://www.whi.org/researchers/data/WhiDataDict/f44_ctos_inv.pdf)
+
+tccode = 581600
+
+```{r}
+# Create factor version
+dt[, ssri_f := factor(ssri, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[obs == 1][order(ssri_f), .(Women = .N), by = ssri_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+## Health and Wellness
+
+### Quality of life
+
+[Overall, how you would rate your quality of life? (Mark one oval in the box below.)](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+Scale from 1 to 10 with 10 being the best.
+
+```{r}
+dt[, .(Missing = sum(is.na(lifequal)), Mean = mean(lifequal, na.rm = TRUE), SD = sd(lifequal, na.rm = TRUE))]
+```
+
+### Depression
+
+[Shortened CES-D/DIS Screening Instrument. Computed from Form 36/37, questions 103-108, 109, and 110. Source: Center for Epidemiological Studies; depression scale (CES-D, short form). PSHTDEP ranges from 0 to 1 with a higher score indicating a greater likelihood of depression. Cutoff values of .06 and .009 have been used to indicate depression.](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(pshtdep)), Mean = mean(pshtdep, na.rm = TRUE), SD = sd(pshtdep, na.rm = TRUE))]
+```
+
+### BMI
+
+[Body-mass Index (BMI), kg/m2. If a participant's BMI is greater than 70, BMI is missing.](https://www.whi.org/researchers/data/WhiDataDict/f80_ctos_inv.pdf)
+
+```{r}
+dt[, .(Missing = sum(is.na(bmi)), Mean = mean(bmi, na.rm = TRUE), SD = sd(bmi, na.rm = TRUE))]
+```
+
+### General health
+
+[In general, would you say your health is (Mark one oval.)](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, genhel_f := factor(genhel, labels = c("Excellent", "Very good", "Good", "Fair", "Poor"))]
+
+# Tag first non-missing value
+dt[!is.na(genhel), first_genhel := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_genhel == 1][order(genhel_f), .(Women = .N), by = genhel_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Dichotomize
+dt[, good_health := if_else(genhel_f == "Excellent" | genhel_f == "Very good", 1, 0, NA_real_)]
+
+# Factor version
+dt[, good_health_f := factor(good_health, labels = c("No", "Yes"))]
+
+# Descriptives at first response
+dt[first_genhel == 1, .(Women = .N), by = good_health_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+
+```{r}
+# Clean up
+dt[, first_genhel := NULL]
+```
+
+### Hysterectomy ever
+
+[Did you ever have a hysterectomy? (This is an operation to take out your uterus or womb.)](https://www.whi.org/researchers/data/WhiDataDict/f2_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, hyst_f := factor(hyst, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[obs == 1, .(Women = .N), by = hyst_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+### Night sweats
+
+[Below is a list of symptoms people sometimes have. For each item, mark the one oval that best
+describes how bothersome the symptom was during the past 4 weeks for you. Be sure to mark
+one oval on each line. Night sweats](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, nightswt_f := factor(nightswt, labels = c("Symptom did not occur", "Symptom was mild", 
+                                               "Symptom was moderate", "Symptom was severe"))]
+
+# Tag first non-missing value
+dt[!is.na(nightswt), first_nightswt := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_nightswt == 1, .(Women = .N), by = nightswt_f][, Cumsum := cumsum(Women)][, Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Dichotomize
+dt[, night_sweats := if_else(nightswt_f == "Symptom did not occur", 0, 1, NA_real_)]
+
+# Create factor version
+dt[, night_sweats_f := factor(night_sweats, labels = c("No", "Yes"))]
+
+# Descriptives
+dt[first_nightswt == 1, .(Women = .N), by = night_sweats_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Clean up
+dt[, first_nightswt := NULL]
+```
+
+
+### Hot flashes
+
+[Below is a list of symptoms people sometimes have. For each item, mark the one oval that best
+describes how bothersome the symptom was during the past 4 weeks for you. Be sure to mark
+one oval on each line. Hot flashes](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, hotflash_f := factor(hotflash, labels = c("Symptom did not occur", "Symptom was mild", 
+                                               "Symptom was moderate", "Symptom was severe"))]
+
+# Tag first non-missing value
+dt[!is.na(hotflash), first_hotflash := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_hotflash == 1][order(hotflash_f), .(Women = .N), by = hotflash_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Dichotomize
+dt[, hot_flashes := if_else(hotflash_f == "Symptom did not occur", 0, 1, NA_real_)]
+
+# Create factor version
+dt[, hot_flashes_f := factor(hot_flashes, labels = c("No", "Yes"))]
+
+# Descriptives
+dt[first_hotflash == 1, .(Women = .N), by = hot_flashes_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Clean up
+dt[, first_hotflash := NULL]
+```
+
+### Vaginal dryness
+
+[Below is a list of symptoms people sometimes have. For each item, mark the one oval that best
+describes how bothersome the symptom was during the past 4 weeks for you. Be sure to mark
+one oval on each line. Vaginal or genital dryness](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, vagdry_f := factor(vagdry, labels = c("Symptom did not occur", "Symptom was mild", 
+                                               "Symptom was moderate", "Symptom was severe"))]
+# Tag first non-missing value
+dt[!is.na(vagdry), first_vagdry := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_vagdry == 1][order(vagdry_f), .(Women = .N), by = vagdry_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Dichotomize
+dt[, vag_dry := if_else(vagdry_f == "Symptom did not occur", 0, 1, NA_real_)]
+
+# Create factor version
+dt[, vag_dry_f := factor(vag_dry, labels = c("No", "Yes"))]
+
+# Descriptives
+dt[first_vagdry == 1, .(Women = .N), by = vag_dry_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Clean up
+dt[, first_vagdry := NULL]
+```
+
+### Urinary incontinence
+
+[Have you ever leaked even a very small amount of urine involuntarily and you couldn't control it?](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, incont_f := factor(incont, labels = c("No", "Yes"))]
+
+# Tag first non-missing value
+dt[!is.na(incont), first_incont := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_incont == 1, .(Women = .N), by = incont_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Clean up
+dt[, first_incont := NULL]
+```
+
+### Atrophy
+
+[Not going to use atrophy. Only asked of HT arm.](https://www.whi.org/researchers/data/WhiDataDict/f81_ht_inv.pdf)
+
+### Chronic disease
+
+Make a single categorical variable - disease X only and multiple.
+
+First clean each individual chronic disease variable.
+
+#### Arthritis
+
+[Did your doctor ever say that you had arthritis?](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, arthrit_f := factor(arthrit, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = arthrit_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Cancer - Breast
+
+[What kind of cancer did you have? (Mark "No" or "Yes" for each type of cancer.) Breast](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, brac_f := factor(brca_f30, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = brac_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Cancer - Cervix
+
+[What kind of cancer did you have? (Mark "No" or "Yes" for each type of cancer.) Cervix (opening
+to the uterus or womb)](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, cervca_f := factor(cervca, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = cervca_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Cancer - Endometrial
+
+[What kind of cancer did you have? (Mark "No" or "Yes" for each type of cancer.) Endometrium
+(lining of the uterus or womb)](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, endo_f := factor(endo_f30, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = endo_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Cancer - Ovarian
+
+[What kind of cancer did you have? (Mark "No" or "Yes" for each type of cancer.) Ovary](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, ovryca_f := factor(ovryca, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = ovryca_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Cardiovascular disease
+
+[Has a doctor ever told you that you had heart problems, problems with your blood circulation, or
+blood clots?](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, cvd_f := factor(cvd, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = cvd_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Diabetes ever
+
+[Did a doctor ever say that you had sugar diabetes or high blood sugar when you were not
+pregnant?](https://www.whi.org/researchers/data/WhiDataDict/f2_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, diab_f := factor(diab, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = diab_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Hypertension
+
+[Did a doctor ever say that you had hypertension or high blood pressure? (Do not include high
+blood pressure that you had only when you were pregnant.)](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, hypt_f := factor(hypt, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = hypt_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Osteoporosis
+
+[Has a doctor told you that you have any of the following conditions or have you had any of the
+following procedures? (Please mark all that apply.) Osteoporosis (weak, thin, or brittle bones)](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, osteopor_f := factor(osteopor, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = osteopor_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Peripheral arterial disease
+
+[Did a doctor ever say that you had claudication or peripheral arterial disease (poor blood flow to
+the legs or blocked or narrowed arteries to the legs)? Do not include varicose veins or phlebitis.](https://www.whi.org/researchers/data/WhiDataDict/f30_ctos_inv.pdf)
+
+```{r}
+# Create factor version
+dt[, pad_f := factor(pad, labels = c("No", "Yes"))]
+
+# Descriptives at first observation
+dt[, .(Obs = .N), by = pad_f][, Cumsum := cumsum(Obs)][, Percent := Obs / max(Cumsum) * 100][]
+```
+
+#### Combined chronic disease variable
+
+```{r}
+# Count conditions within id and day. If any are NA then count is NA.
+dt[, cd_count := sum(arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad)
+     , by = .(id, days)]
+```
+
+```{r}
+# Descriptives
+dt[!is.na(cd_count), .(.N, Mean = mean(cd_count), Max = max(cd_count))]
+```
+
+```{r rows.print=16}
+dt[!is.na(cd_count), chronic_disease := if_else(cd_count == 0,  0, # None
+                                        if_else(cd_count == 2,  1, # 2 conditions
+                                        if_else(cd_count == 3,  2, # 3 conditions
+                                        if_else(cd_count == 4,  3, # 4 conditions
+                                        if_else(cd_count >= 5,  4, # 5+ conditions
+                                        if_else(arthrit ==  1,  5, # Arthritis Only
+                                        if_else(brca_f30 == 1,  6, # BC Only
+                                        if_else(cervca ==   1,  7, # Cervical Only
+                                        if_else(endo_f30 == 1,  8, # Endo Only
+                                        if_else(ovryca ==   1,  9, # Ovarian Only
+                                        if_else(cvd ==      1, 10, # CVD Only
+                                        if_else(diab ==     1, 11, # Diab Only
+                                        if_else(hypt ==     1, 12, # Hypt Only
+                                        if_else(osteopor == 1, 13, # Ost Only
+                                        if_else(pad ==      1, 14, # PAD Only
+                                        NA_real_)))))))))))))))]
+
+# Create factor version
+dt[, chronic_disease_f := factor(chronic_disease, 
+                                 levels = c(0:14),
+                                 labels = c("None", "2 conditions", "3 conditions", "4 conditions", 
+                                            "5+ conditions", "Arthritis Only", "Breast Cancer Only", 
+                                            "Cervical Cancer Only", "Endometrial Cancer Only", 
+                                            "Ovarian Cancer Only", "Cardiovascular Disease Only",
+                                            "Diabetes Only", "Hypertension Only", "Osteoporosis Only",
+                                            "Peripheral Artery Disease Only"))]
+
+# Tag first observation per person
+dt[!is.na(chronic_disease_f), first_cd := seq_len(.N) == 1, by = id]
+
+# Descriptives at first observation
+dt[first_cd == 1][order(chronic_disease_f)][, .(Women = .N), by = chronic_disease_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# Clean up
+rm(ever_vars, time_invariant)
+dt$first_cd <- NULL
+```
+
+```{r save_analysis_09}
+# Save progress
+analysis_09 <- as_tibble(dt)
+write_rds(analysis_09, path = "../data/analysis_09.rds")
+```
+
+```{r session_info, echo=FALSE}
+sessionInfo()
+```

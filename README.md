@@ -76,7 +76,7 @@ For more information about our analysis process and results, please click in the
 
 4.  [Code used to clean and manage sexual function variables](/R%20notebooks/preprocess_04_sexual_function.md)
 
-5.  [Code used to clean and manage covariates of interest](/R%20notebooks/preprocess_01_read_sas.md)
+5.  [Code used to clean and manage covariates of interest](/R%20notebooks/preprocess_05_covariates.md)
 
 6.  [Code used to create baseline subset data](/R%20notebooks/preprocess_01_read_sas.md)
 

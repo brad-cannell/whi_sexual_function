@@ -29,11 +29,17 @@ All analyses include information from women who participated in the [WHI](https:
 
 Please use the navigation bar (blue bar at the top of the screen) to view:  
 
-1. **Table 1.** Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline   
+1. **Table 1.** Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline  
 
-2. **Table 2.** Unadjusted and adjusted odds of global sexual dissatisfaction and sexual frequency dissatisfaction at baseline   
+2. **Figure 1.** Percent of Women Who Reported Abuse at Baseline by Age Group    
 
-3. **Table 3.** Number and percent of women who report sexual satisfaction and sexual frequency satisfaction at baseline by age group and abuse status
+3. **Figure 2.** Percent of Women Who Reported Sexual Satisfaction at Baseline by Age Group   
+
+4. **Figure 3.** Percent of Women Who Reported Sexual Frequency Satisfaction at Baseline by Age Group
+
+5. **Table 2.** Unadjusted and adjusted odds of global sexual dissatisfaction and sexual frequency dissatisfaction at baseline 
+
+6. **Table 3.** Number and percent of women who report sexual satisfaction and sexual frequency satisfaction at baseline by age group and abuse status
 
 Overview
 ===============================================================================
@@ -209,7 +215,96 @@ table_01_kable
 
 **Footnotes:**    
 1. Baseline data for women who had any sexual activity with a partner in the previous year and had a known abuse status. Individual group n's are not mutually exclusive.    
-2. All percentages above are column percentages. For example, 42% of women who reported no abuse at baseline were in the <50 to 59 age group at baseline.    
+2. All percentages above are column percentages. For example, 42% of women who reported no abuse at baseline were in the <50 to 59 age group at baseline.   
+
+Figure 1
+===============================================================================
+
+### Percent, and 95% confidence interval, of Women Who Reported Abuse at Baseline by Age Group
+
+```{r}
+baseline_only %>% 
+  group_by(age_group_f, abuse_d_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>%
+  filter(abuse_d_f == "Yes") %>% 
+  ggplot(data = ., aes(x = age_group_f, y = percent)) +
+    geom_point(color = "blue", stat = "identity", size = 3) +
+    geom_errorbar(aes(x = age_group_f, ymin = lower, ymax = upper), width = 0.15) +
+    geom_label_repel(aes(label = percent), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 25)) +
+    theme_bw()
+```
+
+Figure 2
+===============================================================================
+
+### Percent, and 95% confidence interval, of Women Who Reported Sexual Satisfaction at Baseline by Age Group
+
+```{r}
+baseline_only %>% 
+  group_by(age_group_f, satisfied_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>%
+  filter(satisfied_f == "Yes") %>% 
+  ggplot(data = ., aes(x = age_group_f, y = percent)) +
+    geom_point(color = "blue", stat = "identity", size = 3) +
+    geom_errorbar(aes(x = age_group_f, ymin = lower, ymax = upper), width = 0.15) +
+    geom_label_repel(aes(label = percent), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    theme_bw()
+```
+
+Figure 3
+===============================================================================
+
+### Percent, and 95% confidence interval, of Women Who Reported Sexual Frequency Satisfaction at Baseline by Age Group
+
+```{r}
+baseline_only %>% 
+  filter(!is.na(satfrqsx_f)) %>% 
+  group_by(age_group_f, satfrqsx_f) %>% 
+  count() %>% 
+  mutate(
+    cumsum  = cumsum(n),
+    N = max(cumsum),
+    prop = n / N,
+    percent = round((prop * 100), 1),
+    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
+    tstat = Vectorize(qt, "df")(0.975, N-1),
+    lower = (prop - tstat * se_of_prop) * 100,
+    upper = (prop + tstat * se_of_prop) * 100
+  ) %>% 
+  ggplot(data = ., aes(x = age_group_f, y = percent)) +
+    geom_point(aes(color = satfrqsx_f), stat = "identity", size = 3) +
+    geom_errorbar(aes(x = age_group_f, ymin = lower, ymax = upper, color = satfrqsx_f), width = 0.15) +
+    geom_label_repel(aes(label = percent, color = satfrqsx_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#EDC33B", "#F46D33", "#CC0000"), name = "Sexual Freq Satisfaction") +
+    theme_bw()
+```
+
 
 Table 2
 ===============================================================================
@@ -224,10 +319,19 @@ Row 1 {data-height=10}
 Row 2
 -------------------------------------------------------------------------------
 
+### **Table 2.** Unadjusted and adjusted<sup>1</sup> odds of global sexual dissatisfaction<sup>2</sup> and sexual frequency dissatisfaction<sup>3</sup> at baseline<sup>4</sup> (N = 83,218). 
+
 ```{r table_02_kable}
 table_02_kable <- read_rds("table_02_kable.rds") # Created in table_2_word.Rmd
 table_02_kable
 ```
+
+**Footnotes:**  
+1. Adjusted for age, race/ethnicity education income, marital status, sexual orientation, study component, parity, alcohol consumption, caffeine consumption, smoking status, hormone use, use of SSRIs, quality of life, depression, BMI, self-rated health, hysterectomy, night sweats, hot flashes, vaginal dryness, urinary incontinence, chronic disease.
+2. How satisfied are you with your current sexual activities, either with a partner or alone?   
+3. Are you satisfied with the frequency of your sexual activity, or would you like to have sex more or
+less often?   
+4. Baseline data for women who had any sexual activity with a partner in the previous year, had a known abuse status, and responded to the sexual satisfaction questions.    
 
 Table 3
 ===============================================================================

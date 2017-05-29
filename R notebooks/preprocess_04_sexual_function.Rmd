@@ -1,0 +1,173 @@
+---
+title: "Preprocess 04: Manage Sexual Function Variables"
+date: "`r Sys.Date()`"
+output: 
+  github_document: default
+---
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(data.table)
+library(zoo)
+library(gmodels)
+
+# Load functions
+source("../R scripts/functions.R")
+```
+
+-------------------------------------------------------------------------------
+
+# Clean outcome variables: Sexual function
+
+-------------------------------------------------------------------------------
+
+```{r load_analysis_06}
+# Load data
+analysis_06 <- read_rds("../data/analysis_06.rds")
+check_data(analysis_06) # 1,432,448 observations and 81 variables
+```
+
+```{r}
+dt <- as.data.table(analysis_06)
+```
+
+## Sexual activity in past year
+
+[Did you have any sexual activity with a partner in the last year?](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Recode 9 to missing
+dt[sexactiv == 9, sexactiv := NA_real_]
+# select(dt, id, days, obs, sexactiv)
+```
+
+Many women do not have a measure for sexactiv in their first observation. Below I will create a variable that captures their sexactiv status at the first time it is measured.
+
+```{r}
+# Tag first non-missing value of sexactiv
+dt[!is.na(sexactiv), first_sexactiv := seq_len(.N) == 1, by = id]
+# select(dt, id, days, obs, sexactiv, first_sexactiv)
+```
+
+Because of the way the question is worded, we can carry responses backwards within the year. However, this changes the interpretation to be somethin like "where you currently sexually active on this day?"
+
+```{r}
+# Temp variable for response number
+dt[!is.na(sexactiv), response_num := 1:.N, by = id]
+
+# Temp variable for days at response
+dt[!is.na(response_num), response_days := days]
+
+# Carry backward response_days within id
+dt[, response_days := na.locf(response_days, na.rm = FALSE, fromLast = TRUE), by = id]
+
+# Absolute difference in days between days and response_days
+dt[, diff := abs(response_days - days)]
+
+# Carry backward sexactiv_f if diff <= 365
+dt[diff <= 365, sexactiv := na.locf(sexactiv, na.rm = FALSE, fromLast = TRUE), by = id]
+
+# select(dt, id, days, obs, sexactiv, response_num, response_days, diff)
+
+# Drop temp vars
+dt[, c("response_num", "response_days", "diff") := NULL]
+
+# Create factor version
+dt[, sexactiv_f := factor(sexactiv, labels = c("No", "Yes"))]
+
+# Descriptives at first response
+dt[first_sexactiv == 1, .(Women = .N), by = sexactiv_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# How many never respond?
+dt[, all(is.na(first_sexactiv)), by = id][, .(`Never respond` = sum(V1))][] # 2,859
+```
+
+
+## Sexual satisfaction
+
+[How satisfied are you with your current sexual activities, either with a partner or alone? (Mark
+one oval.)](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Recode 9 to missing
+dt[satsex == 9, satsex := NA_real_]
+
+# Create factor version
+dt[, satsex_f := factor(satsex, labels = c("Very unsatisfied", "A little unsatisfied", "Somewhat satisfied",
+                                           "Very satisfied"))]
+
+# Tag first non-missing value of satsex
+dt[!is.na(satsex), first_satsex := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_satsex == 1, .(Women = .N), by = satsex_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# How many never respond?
+dt[, all(is.na(first_satsex)), by = id][, .(`Never respond` = sum(V1))][] # 18,064
+```
+
+```{r}
+# Create a dichotomous version
+dt[, satisfied := if_else(satsex_f == "Somewhat satisfied" | satsex_f == "Very satisfied", 1, 0, NA_real_)]
+
+# Create factor version
+dt[, satisfied_f := factor(satisfied, labels = c("No", "Yes"))]
+
+# Descriptives at first response
+dt[first_satsex == 1, .(Women = .N), by = satisfied_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+## Sexual frequency satisfaction
+
+[Are you satisfied with the frequency of your sexual activity, or would you like to have sex more or
+less often? (Mark one oval.)](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf)
+
+```{r}
+# Recode 9 to missing
+dt[satfrqsx == 9, satfrqsx := NA_real_]
+
+# Create factor version
+dt[, satfrqsx_f := factor(satfrqsx, labels = c("Less often", "Satisfied with current frequency", "More often"))]
+
+# Tag first non-missing value of satsex
+dt[!is.na(satfrqsx), first_satfrqsx := seq_len(.N) == 1, by = id]
+
+# Descriptives at first response
+dt[first_satfrqsx == 1, .(Women = .N), by = satfrqsx_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r}
+# How many never respond?
+dt[, all(is.na(first_satfrqsx)), by = id][, .(`Never respond` = sum(V1))][] # 26,229
+```
+
+```{r}
+# Create a dichotomous version
+dt[, freq_satisfied := if_else(satfrqsx_f == "Satisfied with current frequency", 1, 0, NA_real_)]
+
+# Create factor version
+dt[, freq_satisfied_f := factor(freq_satisfied, labels = c("No", "Yes"))]
+
+# Descriptives at first response
+dt[first_satfrqsx == 1, .(Women = .N), by = freq_satisfied_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+```{r save_analysis_07}
+# Save progress
+analysis_07 <- dt
+write_rds(analysis_07, path = "../data/analysis_07.rds")
+```
+
+```{r session_info, echo=FALSE}
+sessionInfo()
+```

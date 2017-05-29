@@ -74,7 +74,7 @@ For more information about our analysis process and results, please click in the
 
 3.  [Code used to clean and manage abuse variables](/R%20notebooks/preprocess_03_abuse.md)
 
-4.  [Code used to clean and manage sexual function variables](/R%20notebooks/preprocess_01_read_sas.md)
+4.  [Code used to clean and manage sexual function variables](/R%20notebooks/preprocess_04_sexual_function.md)
 
 5.  [Code used to clean and manage covariates of interest](/R%20notebooks/preprocess_01_read_sas.md)
 

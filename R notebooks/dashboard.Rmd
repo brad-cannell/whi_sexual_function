@@ -11,7 +11,6 @@ output:
 library(flexdashboard)
 library(tidyverse)
 library(ggrepel)
-library(kableExtra)
 ```
 
 ```{r load_data}
@@ -21,6 +20,7 @@ any_abuse <- read_rds(path = "../data/any_abuse.rds")
 verbal_only <- read_rds(path = "../data/verbal_only.rds")
 physical_only <- read_rds(path = "../data/physical_only.rds")
 verbal_and_physical <- read_rds(path = "../data/verbal_and_physical.rds")
+table_01_n <- nrow(baseline_only) %>% format(big.mark = ",")
 ```
 
 Sidebar {.sidebar data-width=300}
@@ -193,10 +193,6 @@ Table 1
 Row 1 {data-height=10}
 -------------------------------------------------------------------------------
 
-### View in Google Docs
-
-[Click here to view Table 1 in Google Docs](https://drive.google.com/open?id=1XUEqxH-Njn5WGHe6tOYN6SomrlVX19vPjo6Te0Gr7Nw)
-
 ### Download in Word Format
 
 [Click here to download Table 1 in Word Format](https://github.com/brad-cannell/whi_sexual_function/blob/master/R%20notebooks/table_1_word.docx)
@@ -204,61 +200,22 @@ Row 1 {data-height=10}
 Row 2
 -------------------------------------------------------------------------------
 
-### Reported No Abuse at Baseline
-
-```{r}
-n <- nrow(no_abuse) %>% format(., big.mark = ",")
-valueBox(n, color = "#63A2E7")
-```
-
-### Reported Any Abuse at Baseline
-
-```{r}
-n <- nrow(any_abuse) %>% format(., big.mark = ",")
-valueBox(n, color = "#CC0000")
-# Add color
-```
-
-### Reported Verbal Abuse Only at Baseline
-
-```{r}
-n <- nrow(verbal_only) %>% format(., big.mark = ",")
-valueBox(n, color = "#CC0000")
-```
-
-### Reported Physical Abuse Only at Baseline
-
-```{r}
-n <- nrow(physical_only) %>% format(., big.mark = ",")
-valueBox(n, color = "#CC0000")
-```
-
-### Reported Physical and Verbal Abuse at Baseline
-
-```{r}
-n <- nrow(verbal_and_physical) %>% format(., big.mark = ",")
-valueBox(n, color = "#CC0000")
-```
-
-Row 3
--------------------------------------------------------------------------------
-
-### Table 1 Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline 
+### Table 1 Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline (N = `r table_01_n`)<sup>1</sup>
 
 ```{r table_01_kable}
 table_01_kable <- read_rds("table_01_kable.rds") # Created in table_1_word.Rmd
 table_01_kable
 ```
 
+**Footnotes:**    
+1. Baseline data for women who had any sexual activity with a partner in the previous year and had a known abuse status. Individual group n's are not mutually exclusive.    
+2. All percentages above are column percentages. For example, 42% of women who reported no abuse at baseline were in the <50 to 59 age group at baseline.    
+
 Table 2
 ===============================================================================
 
 Row 1 {data-height=10}
 -------------------------------------------------------------------------------
-
-### View in Google Docs
-
-[Click here to view Table 2 in Google Docs](https://drive.google.com/open?id=1BbPIRRQfFV4kPiOlfYPxveI-xHMmS1XRJJRcpZWuSzY)
 
 ### Download in Word Format
 
@@ -277,10 +234,6 @@ Table 3
 
 Row 1 {data-height=10}
 -------------------------------------------------------------------------------
-
-### View in Google Docs
-
-[Click here to view Table 3 in Google Docs](https://docs.google.com/document/d/1nyuVQ3zuug5T-0zN0WE53LOBJyRN9VTB3_sMB0kPvgU/edit?usp=sharing)
 
 ### Download in Word Format
 

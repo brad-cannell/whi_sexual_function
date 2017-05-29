@@ -72,7 +72,7 @@ For more information about our analysis process and results, please click in the
 
 2.  [Code used for preliminary variable management](/R%20notebooks/preprocess_02_preliminary_variable_management.md)
 
-3.  [Code used to clean and manage abuse variables](/R%20notebooks/preprocess_01_read_sas.md)
+3.  [Code used to clean and manage abuse variables](/R%20notebooks/preprocess_03_abuse.md)
 
 4.  [Code used to clean and manage sexual function variables](/R%20notebooks/preprocess_01_read_sas.md)
 

@@ -1,0 +1,47 @@
+---
+title: "Spot Check Table 1"
+date: "`r Sys.Date()`"
+output: 
+  html_notebook:
+    toc: false
+---
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(data.table)
+```
+
+```{r load_data, include=FALSE}
+baseline_only <- read_rds(path = "../data/baseline_only.rds")
+dt <- as.data.table(baseline_only)
+```
+
+```{r}
+# Continuous 2-level
+dt[, .(mean = mean(age), sd = sd(age)), by = abuse_d_f]
+```
+
+```{r}
+# Continuous 4-level
+dt[, .(mean = mean(f60caff, na.rm = TRUE), sd = sd(f60caff, na.rm = TRUE)), by = abuse4cat_f]
+```
+
+
+```{r rows.print=36}
+# Categorical 2-level
+dt[, .N, by = .(abuse_d_f, race_eth_f)][
+  , cumsum := cumsum(N), by = abuse_d_f][
+    , percent := N / max(cumsum), by = abuse_d_f][order(abuse_d_f, race_eth_f)]
+```
+
+```{r rows.print=36}
+# Categorical 4-level
+dt[, .N, by = .(abuse4cat_f, married_f)][
+  , cumsum := cumsum(N), by = abuse4cat_f][
+    , percent := N / max(cumsum), by = abuse4cat_f][order(abuse4cat_f, married_f)]
+```
+
+There is a lot of missing for chronic disease. Redo coding for ever vars, then come back and spot check again.
+
+

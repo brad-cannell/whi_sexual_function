@@ -1,15 +1,8 @@
 ---
-title: "Preprocess 01: Read in SAS Data Set"
+title: 'Preprocess 01: Read in SAS Data Set'
 date: '`r Sys.Date()`'
 output:
-  html_notebook:
-    toc: yes
-  html_document:
-    toc: yes
-    toc_float: yes
-    code_folding: show
-  word_document:
-    reference_docx: word_style_template_01.docx
+  github_document: default
 ---
 
 ---
@@ -31,8 +24,8 @@ source("../R scripts/functions.R")
 
 ```{r}
 # Load data created in SAS
-start <- now()
-merged <- read_sas("~/Dropbox/Research/WHI/MS3226 - Sexual function/whiSexualFunction/data/merged.sas7bdat")
+start  <- now()
+merged <- read_sas("../data/merged.sas7bdat")
 finish <- now()
 difftime(finish, start)
 ```
@@ -135,13 +128,6 @@ Save in R binary format
 ```{r}
 write_rds(analysis_01, path = "../data/analysis_01.rds")
 ```
-
-
--------------------------------------------------------------------------------
-
-&nbsp;
-
-#### Session Info:
 
 ```{r session_info, echo=FALSE}
 sessionInfo()

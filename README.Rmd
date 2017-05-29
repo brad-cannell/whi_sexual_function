@@ -71,12 +71,27 @@ For more information about our analysis process and results, please click in the
 
 [Code used to merge individual forms](/SAS/merge_forms.sas)
 
-[Code used for importing SAS data into R](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/a0cbaa72/R%20notebooks/preprocess_01_read_sas.nb.html)
+&nbsp;
 
-[Code used for variable management in R](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/a0cbaa72/R%20notebooks/preprocess_02_variable_management.nb.html)
+### Codes for data preprocessing in R
 
-[Code used for creating final analysis data in R](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/a0cbaa72/R%20notebooks/preprocess_03_analysis_data.nb.html)
+-----
+
+1. [Code used for importing data into R](/R notebooks/preprocess_01_read_sas.md)
+
+2. [Code used for preliminary variable management](/R notebooks/preprocess_01_read_sas.md)
+
+3. [Code used to clean and manage abuse variables](/R notebooks/preprocess_01_read_sas.md)
+
+4. [Code used to clean and manage sexual function variables](/R notebooks/preprocess_01_read_sas.md)
+
+5. [Code used to clean and manage covariates of interest](/R notebooks/preprocess_01_read_sas.md)
+
+6. [Code used to create baseline subset data](/R notebooks/preprocess_01_read_sas.md)
+
+7. [Code used for multiple imputation](/R notebooks/preprocess_01_read_sas.md)
+
 
 ### Codebooks
 
-[Merged WHI dataset](https://cdn.rawgit.com/mbcann01/whi_sexual_function/a9bb6cc0/SAS_reports/merged_codebook.html)
+[Merged WHI dataset](https://rawgit.com/brad-cannell/whi_sexual_function/master/SAS_reports/merged_codebook.html)

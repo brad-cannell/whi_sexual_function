@@ -79,7 +79,7 @@ For more information about our analysis process and results, please click in the
 
 1. [Code used for importing data into R](/R notebooks/preprocess_01_read_sas.md)
 
-2. [Code used for preliminary variable management](/R notebooks/preprocess_01_read_sas.md)
+2. [Code used for preliminary variable management](/R notebooks/preprocess_02_preliminary_variable_management.md)
 
 3. [Code used to clean and manage abuse variables](/R notebooks/preprocess_01_read_sas.md)
 

@@ -1,0 +1,232 @@
+---
+title: "Preprocess 02: Preliminary Variable Management"
+date: "`r Sys.Date()`"
+output: 
+  github_document: default
+---
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(data.table)
+
+# Load functions
+source("../R scripts/functions.R")
+```
+
+-------------------------------------------------------------------------------
+
+# Dichotomize medications to reduce duplicated days
+
+-------------------------------------------------------------------------------
+
+* Tccode creates a separate row within id and day for each medication taken. We only care about SSRI's. We will collapse into a single row within id and day with a single variable indicating if an SSRI was reported or not.
+
+* Drug class from Erika (2017-03-09): 581600
+
+```{r load_analysis_01}
+# Load data
+analysis_01 <- read_rds("../data/analysis_01.rds")
+check_data(analysis_01) # 2,448,638 observations and 50 variables
+```
+
+```{r}
+dt <- as.data.table(analysis_01)
+```
+
+## Tag observations with 581600 and distribute SSRI within id and days
+
+```{r tag_ssri, rows.print=12}
+# Create new var, SSRI, that is equal to 1 if any drug within id and day is an SSRI
+dt[, ssri := if_else(any(tccode == "581600"), 1, 0, NA_real_), by = .(id, days)]
+# select(dt, id, days, tccode, ssri) %>% filter(id == 100088)
+check_data(dt) # 2,448,638 observations and 51 variables
+```
+
+## Now that SSRI is distributed within id and day, keep one row per day 
+
+```{r one_row_per_ssri}
+# Drop tccode
+dt[, tccode := NULL]
+check_data(dt) # 2,448,638 observations and 50 variables
+```
+
+```{r check_dups}
+# Create new logical var, dup, that is TRUE when the row is a duplicate
+dt[, dup := duplicated(dt)]
+check_data(dt) # 2,448,638 observations and 51 variables
+```
+
+```{r}
+# Count dup == TRUE
+sum(dt$dup) # 1,016,190
+```
+
+```{r drop_dups}
+# Drop duplicate rows
+dt <- dt[dup == FALSE, ]
+check_data(dt) # 1,432,448 observations and 50 variables
+```
+
+```{r check_dups_02}
+# Any duplicates by id and days?
+dt[, dup := duplicated(.SD), .SDcols = c("id", "days")]
+dt[, sum(dup)] # 0
+```
+
+```{r drop_dups_02}
+# Drop dup
+dt$dup <- NULL
+check_data(dt) # 1,432,448 observations and 50 variables
+```
+
+```{r save_analysis_02}
+# Save progress
+analysis_02 <- dt
+write_rds(analysis_02, path = "../data/analysis_02.rds")
+```
+
+At this point there are 1,432,448 observations and 50 variables. There are no duplicate rows in terms of id and days.
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Expand age across time
+
+-------------------------------------------------------------------------------
+
+```{r load_analysis_02}
+# Load data
+analysis_02 <- read_rds("../data/analysis_02.rds")
+check_data(analysis_02) # 1,432,448 observations and 50 variables
+```
+
+```{r}
+dt <- as.data.table(analysis_02)
+```
+
+```{r wrangle_age}
+dt[, age_days := age * 365.25]
+dt[, age_days_2 := na.omit(age_days)[1], by = id]
+dt[, age_days_2 := age_days_2 + days]
+dt[, age_2 := round(age_days_2 / 365.25)]
+# select(dt, id, days, age, age_days, age_days_2, age_2)
+dt[, age := age_2]
+dt[, c("age_days", "age_days_2", "age_2") := NULL]
+# select(dt, id, days, age)
+dt[days == 0, .(.N, `Mean Age at Baseline` = mean(age), SD = sd(age), Min = min(age), Max = max(age))]
+```
+
+```{r save_analysis_03}
+# Save progress
+analysis_03 <- dt
+write_rds(analysis_03, path = "../data/analysis_03.rds")
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Create variables: obs, finalobs, finalage, numobs, finalyears
+
+-------------------------------------------------------------------------------
+
+```{r load_analysis_03}
+# Load data
+analysis_03 <- read_rds("../data/analysis_03.rds")
+check_data(analysis_03) # 1,432,448 observations and 50 variables
+```
+
+```{r}
+dt <- as.data.table(analysis_03)
+```
+
+## Creating a observation number variable
+
+```{r create_obs}
+dt <- dt[order(id, days), ]
+dt[, obs := 1:.N, by = id]
+# select(dt, id, days, obs)
+dt[, .(`Mean Number of Observations Per Woman` = mean(obs), SD = sd(obs))]
+```
+			
+## Creating an age at final observation tag
+
+```{r tag_age_final_obs}
+dt[, final_obs := if_else(obs == max(obs), TRUE, FALSE), by = id]
+attributes(dt$final_obs)$label <- "Tag largest observation number by id"
+# select(dt, id, days, obs, final_obs)
+sum(dt$final_obs) # 161,808
+```
+
+## Creating age at final observation variable
+
+```{r create_age_final_obs}
+dt[final_obs == TRUE, final_age := age, by = id]
+dt[final_obs == TRUE, .(.N, `Mean Age at Last Observation` = mean(final_age), SD = sd(final_age), 
+                        Min = min(final_age), Max = max(final_age))]
+```
+
+## Distribute final age across observations
+
+```{r dist_final_age}
+dt[, final_age := max(final_age, na.rm = TRUE), by = id]
+attributes(dt$final_age)$label <- "Age at final observation"
+# select(dt, id, days, age, final_age)
+```
+
+## Creating number of observations variable at final observation
+
+```{r create_n_obs_at_final_obs}
+dt[final_obs == TRUE, num_obs := obs]
+dt[final_obs == TRUE, .(.N, `Mean Observations per Woman` = mean(obs), SD = sd(obs), Min = min(obs), 
+                        Max = max(obs))]
+```
+
+## Distribute num_obs across observations
+
+```{r dist_num_obs}
+dt[, num_obs := max(num_obs, na.rm = TRUE), by = id]
+attributes(dt$numobs)$label <- "Number of observations"
+# select(dt, id, days, obs, num_obs)
+```
+
+## Creating years since e/r at final observation variable
+
+```{r create_years_since_enroll}
+dt[, years := round(days / 365.25)]
+dt[final_obs == TRUE, total_years := years]
+dt[final_obs == TRUE, .(.N, `Mean Number of Years Enrolled` = mean(years), SD = sd(years), Min = min(years), 
+                        Max = max(years))]
+```
+
+## Distribute total_years across observations
+
+```{r dist_years_since_enroll}
+dt[, total_years := max(total_years, na.rm = TRUE), by = id]
+attributes(dt$finalyears)$label <- "Total years since e/r @ last observation"
+# select(dt, id, days, final_obs, years, total_years)
+```
+
+```{r save_analysis_04}
+# Save progress
+analysis_04 <- dt
+write_rds(analysis_04, path = "../data/analysis_04.rds")
+```
+
+```{r session_info, echo=FALSE}
+sessionInfo()
+```

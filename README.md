@@ -8,7 +8,7 @@ This is the research repository for MS3226: Partner abuse and sexual satisfactio
 Table of Contents
 -----------------
 
-1.  [Analysis dashboard](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/49dc3e1f/R%20notebooks/dashboard.html). Click on the analysis dashboard link for an overview of all study results in a dashboard format.
+1.  [Analysis dashboard](https://cdn.rawgit.com/brad-cannell/whi_sexual_function/d70327d2/R%20notebooks/dashboard.html). Click on the analysis dashboard link for an overview of all study results in a dashboard format.
 
 2.  [Study objectives](#objectives)
 

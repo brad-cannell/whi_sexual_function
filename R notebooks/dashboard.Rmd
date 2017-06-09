@@ -327,7 +327,7 @@ table_02_kable
 ```
 
 **Footnotes:**  
-1. Adjusted for age, race/ethnicity education income, marital status, sexual orientation, study component, parity, alcohol consumption, caffeine consumption, smoking status, hormone use, use of SSRIs, quality of life, depression, BMI, self-rated health, hysterectomy, night sweats, hot flashes, vaginal dryness, urinary incontinence, chronic disease.
+1. Adjusted for age, race/ethnicity, education, income, marital status, sexual orientation, study component, parity, alcohol consumption, caffeine consumption, smoking status, hormone use, use of SSRIs, quality of life, depression, BMI, self-rated health, hysterectomy, night sweats, hot flashes, vaginal dryness, urinary incontinence, chronic disease.   
 2. How satisfied are you with your current sexual activities, either with a partner or alone?   
 3. Are you satisfied with the frequency of your sexual activity, or would you like to have sex more or
 less often?   

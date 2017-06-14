@@ -407,6 +407,22 @@ attributes(dt$first_verbab_obs)$label <- "Tag first observed value of any abuse"
 #   filter(id %in% c(103039, 103617, 104299, 104353, 112203))
 dt$x <- NULL
 ```
+&nbsp;
+
+### How many women have a non-missing response to the abuse question at WHI day 0?
+
+```{r}
+dt[days == 0, .N, by = abuse_d][abuse_d != -3, CumSum := cumsum(N)][]
+```
+
+Only 11,960 women responded to the abuse questions on WHI day 0.
+
+### What is the distribution of days when women answered the abuse questions look like?
+
+```{r}
+dt[first_ab_obs == 1, .(Min = min(days), Mean = mean(days), Median = median(days), Max = max(days))]
+dt[id == 109034]
+```
 
 ```{r}
 # How many women have a first abuse observation?

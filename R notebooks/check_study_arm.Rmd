@@ -1,0 +1,82 @@
+---
+title: "Percent of Sample with a Valid Response for Each Covariate of Interest by Study Arm (N = 83,145)"
+output:
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+```{r echo=FALSE, message=FALSE}
+# Load packages
+library(tidyverse)
+
+source("../R scripts/functions.R")
+```
+
+```{r echo=FALSE}
+# Load data
+baseline_only <- read_rds("../data/baseline_only.rds")
+check_data(baseline_only) # 83,145 observations and 34 variables
+```
+
+```{r create_table_header, include=FALSE}
+# Create table header
+vars = 15
+rows = vars + 1
+table <- tibble(
+  Variable = vector(mode = "character", length = rows),
+  CT = vector(mode = "character", length = rows),
+  OS = vector(mode = "character", length = rows)
+)
+
+# N for CT
+table[1, 2] <- paste0(
+  "(N = ",
+  filter(baseline_only, ctos_f == "CT") %>% nrow() %>% format(big.mark = ","),
+  ")"
+)
+
+# N for OS
+table[1, 3] <- paste0(
+  "(N = ",
+  filter(baseline_only, ctos_f == "OS") %>% nrow() %>% format(big.mark = ","),
+  ")"
+)
+```
+
+```{r, echo=FALSE}
+# Function that returns the percent of people who answered (not missing) question x, by CT/OS
+vars <- quos(race_eth_f, edu4cat_f, inc5cat_f, married_f, smoking_f, bmi, hyst_f, incont_f, good_health_f, 
+             pshtdep, ssri_f, night_sweats_f, hot_flashes_f, vag_dry_f, hormnw_f)
+# Still missing pack years and hypertension.
+
+for(i in seq_along(vars)) {
+  table[i + 1, ] <- baseline_only %>%          # Chunk of table to receive loop output
+    group_by(ctos_f) %>% 
+    summarise(
+      N = n(),
+      N_var = sum(!is.na(!!vars[[i]]))              # Use !! with vars[[i]]
+    ) %>% 
+    mutate(Percent_answered = (N_var / N * 100) %>% round(1)) %>% 
+    mutate(Percent_answered = paste0(format(Percent_answered, nsmall = 1), "%")) %>% 
+    select(ctos_f, Percent_answered) %>% 
+    spread(ctos_f, Percent_answered) %>% 
+    mutate(Variable = quo_name(vars[[i]])) %>% # Use quo_name to get variable name for first column
+    select(Variable, CT, OS)
+}
+```
+
+```{r, echo=FALSE}
+table_kable <- knitr::kable(table)
+write_rds(table, path = "check_study_arm.rds") # Save for use in dashboard
+table_kable
+```
+
+```{r notes, include=FALSE}
+# After knitting word table:
+# Change all font to TNR 11
+# Left justify title
+# Remove bold from title - except "Table 2"
+# Center columns 3 and above from top to bottom
+# Add bottom border to table
+# Set footnotes to 10 pt font
+```

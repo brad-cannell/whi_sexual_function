@@ -75,12 +75,14 @@ dt[abuse_ever == -3 & days == 0, baseline := TRUE]
 
 # Subset the variables of interest
 
+2017-06-26: Added hypertension
+
 ```{r subset_vars_of_interest}
 dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f, age,
              age_group_f, race_eth_f, edu4cat_f, inc5cat_f, married_f, sex_f, ctos_f, parity_f, texpwk, alcswk,
              f60caff, smoking_f, horm_f, hormnw_f, ssri_f, lifequal, pshtdep, bmi, good_health_f, hyst_f,
-             night_sweats_f, hot_flashes_f, vag_dry_f, incont_f, chronic_disease_f, baseline)]
-check_data(dt) # 1,432,448 observations and 35 variables
+             night_sweats_f, hot_flashes_f, vag_dry_f, incont_f, chronic_disease_f, baseline, hypt_f)]
+check_data(dt) # 1,432,448 observations and 36 variables
 ```
 
 
@@ -111,7 +113,6 @@ dt[baseline == 1][order(sexactiv_f)][, .(Women = .N), by = sexactiv_f][, Cumsum 
 ```{r}
 71239 + 7167 # 78,406 women have no or NA for sexactive_f at baseline.
 ```
-&nbsp;
 
 All rows for all 78,406 women that did not report being sexually active in the previous year will be dropped from the data.
 
@@ -123,7 +124,6 @@ keep_ids <- dt[baseline == 1 & sexactiv_f == "Yes", id]
 dt <- dt[id %in% keep_ids]
 count_ids(dt$id) # 83,402 unique women
 ```
-&nbsp;
 
 How many women report "never having sex" on the sexual orientation question
 
@@ -139,7 +139,7 @@ count_ids(dt$id) # 83,329 unique women
 ```
 
 ```{r}
-check_data(dt) # 744,745 observations and 35 variables
+check_data(dt) # 744,745 observations and 36 variables
 ```
 
 ```{r}
@@ -212,7 +212,7 @@ count_ids(dt$id) # 83,145 unique women
 184 women were dropped from the data because their abuse status (4-level) could not be determined.
 
 ```{r}
-check_data(dt) # 743,094 observations and 35 variables
+check_data(dt) # 743,094 observations and 36 variables
 ```
 
 ```{r}
@@ -240,7 +240,6 @@ How many women are missing sexual satisfaction at baseline?
 dt[baseline == 1][order(satisfied_f)][, .(Women = .N), by = satisfied_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 ```
-&nbsp;
 
 How many women are missing sexual frequency satisfaction at baseline?
 
@@ -248,7 +247,6 @@ How many women are missing sexual frequency satisfaction at baseline?
 dt[baseline == 1][order(freq_satisfied_f)][, .(Women = .N), by = freq_satisfied_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 ```
-&nbsp;
 
 Only 4% of women are missing sexual satisfaction at baseline, and only 5% of women are missing sexual frequency satisfaction at baseline. At some point, we may want to come back and impute sexual satisfaction and sexual frequency satisfaction longitudinally. For now, we will impute them from other variables in the data set.
 
@@ -277,7 +275,7 @@ write_rds(analysis_10, path = "../data/analysis_10.rds")
 ```{r load_analysis_10}
 # Load data
 analysis_10 <- read_rds("../data/analysis_10.rds")
-check_data(analysis_10) # 743,094 observations and 35 variables
+check_data(analysis_10) # 743,094 observations and 36 variables
 ```
 
 ```{r}
@@ -299,7 +297,7 @@ baseline_only <- dt %>% filter(baseline == TRUE)
 # Drop the baseline variable
 baseline_only$baseline <- NULL
 
-check_data(baseline_only) # 83,145 observations and 34 variables
+check_data(baseline_only) # 83,145 observations and 35 variables
 ```
 
 ## Create subgroups for Table 1 (no, any, verbal only, phys only, both)

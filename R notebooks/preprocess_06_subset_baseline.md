@@ -1,6 +1,6 @@
 Preprocess 06: Subset Baseline Data
 ================
-2017-05-29
+2017-06-26
 
 ``` r
 # Load packages
@@ -73,15 +73,17 @@ dt[abuse_ever == -3 & days == 0, baseline := TRUE]
 Subset the variables of interest
 ================================
 
+2017-06-26: Added hypertension
+
 ``` r
 dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f, age,
              age_group_f, race_eth_f, edu4cat_f, inc5cat_f, married_f, sex_f, ctos_f, parity_f, texpwk, alcswk,
              f60caff, smoking_f, horm_f, hormnw_f, ssri_f, lifequal, pshtdep, bmi, good_health_f, hyst_f,
-             night_sweats_f, hot_flashes_f, vag_dry_f, incont_f, chronic_disease_f, baseline)]
-check_data(dt) # 1,432,448 observations and 35 variables
+             night_sweats_f, hot_flashes_f, vag_dry_f, incont_f, chronic_disease_f, baseline, hypt_f)]
+check_data(dt) # 1,432,448 observations and 36 variables
 ```
 
-    ## 1,432,448 observations and 35 variables
+    ## 1,432,448 observations and 36 variables
 
 ------------------------------------------------------------------------
 
@@ -111,8 +113,6 @@ dt[baseline == 1][order(sexactiv_f)][, .(Women = .N), by = sexactiv_f][, Cumsum 
 
     ## [1] 78406
 
- 
-
 All rows for all 78,406 women that did not report being sexually active in the previous year will be dropped from the data.
 
 ``` r
@@ -125,8 +125,6 @@ count_ids(dt$id) # 83,402 unique women
 ```
 
     ## 83,402 unique women
-
- 
 
 How many women report "never having sex" on the sexual orientation question
 
@@ -151,10 +149,10 @@ count_ids(dt$id) # 83,329 unique women
     ## 83,329 unique women
 
 ``` r
-check_data(dt) # 744,745 observations and 35 variables
+check_data(dt) # 744,745 observations and 36 variables
 ```
 
-    ## 744,745 observations and 35 variables
+    ## 744,745 observations and 36 variables
 
 ``` r
 # Clean up
@@ -251,10 +249,10 @@ count_ids(dt$id) # 83,145 unique women
 184 women were dropped from the data because their abuse status (4-level) could not be determined.
 
 ``` r
-check_data(dt) # 743,094 observations and 35 variables
+check_data(dt) # 743,094 observations and 36 variables
 ```
 
-    ## 743,094 observations and 35 variables
+    ## 743,094 observations and 36 variables
 
 ``` r
 # Clean up
@@ -280,8 +278,6 @@ dt[baseline == 1][order(satisfied_f)][, .(Women = .N), by = satisfied_f][, Cumsu
     ## 2:         Yes 61208  79884 73.615972
     ## 3:          NA  3261  83145  3.922064
 
- 
-
 How many women are missing sexual frequency satisfaction at baseline?
 
 ``` r
@@ -293,8 +289,6 @@ dt[baseline == 1][order(freq_satisfied_f)][, .(Women = .N), by = freq_satisfied_
     ## 1:               No 27191  27191 32.703109
     ## 2:              Yes 52082  79273 62.639966
     ## 3:               NA  3872  83145  4.656925
-
- 
 
 Only 4% of women are missing sexual satisfaction at baseline, and only 5% of women are missing sexual frequency satisfaction at baseline. At some point, we may want to come back and impute sexual satisfaction and sexual frequency satisfaction longitudinally. For now, we will impute them from other variables in the data set.
 
@@ -315,10 +309,10 @@ Create data subsets for Table 1 (prior to multiple imputation)
 ``` r
 # Load data
 analysis_10 <- read_rds("../data/analysis_10.rds")
-check_data(analysis_10) # 743,094 observations and 35 variables
+check_data(analysis_10) # 743,094 observations and 36 variables
 ```
 
-    ## 743,094 observations and 35 variables
+    ## 743,094 observations and 36 variables
 
 ``` r
 count_ids(analysis_10$id) # 83,145 unique women
@@ -343,10 +337,10 @@ baseline_only <- dt %>% filter(baseline == TRUE)
 # Drop the baseline variable
 baseline_only$baseline <- NULL
 
-check_data(baseline_only) # 83,145 observations and 34 variables
+check_data(baseline_only) # 83,145 observations and 35 variables
 ```
 
-    ## 83,145 observations and 34 variables
+    ## 83,145 observations and 35 variables
 
 Create subgroups for Table 1 (no, any, verbal only, phys only, both)
 --------------------------------------------------------------------
@@ -407,18 +401,20 @@ write_rds(verbal_and_physical, path = "../data/verbal_and_physical.rds")
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] data.table_1.10.4 dplyr_0.5.0       purrr_0.2.2       readr_1.1.0      
-    ## [5] tidyr_0.6.2       tibble_1.3.0      ggplot2_2.2.1     tidyverse_1.1.1  
+    ## [1] bindrcpp_0.1      data.table_1.10.4 dplyr_0.7.0       purrr_0.2.2.2    
+    ## [5] readr_1.1.1       tidyr_0.6.3       tibble_1.3.3      ggplot2_2.2.1    
+    ## [9] tidyverse_1.1.1  
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_0.12.10     cellranger_1.1.0 compiler_3.4.0   plyr_1.8.4      
-    ##  [5] forcats_0.2.0    tools_3.4.0      digest_0.6.12    lubridate_1.6.0 
-    ##  [9] jsonlite_1.4     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
-    ## [13] lattice_0.20-35  psych_1.7.5      DBI_0.6-1        yaml_2.1.14     
-    ## [17] parallel_3.4.0   haven_1.0.0      xml2_1.1.1       stringr_1.2.0   
-    ## [21] httr_1.2.1       knitr_1.16       hms_0.3          rprojroot_1.2   
-    ## [25] grid_3.4.0       R6_2.2.0         readxl_1.0.0     foreign_0.8-67  
-    ## [29] rmarkdown_1.5    modelr_0.1.0     reshape2_1.4.2   magrittr_1.5    
-    ## [33] backports_1.0.5  scales_0.4.1     htmltools_0.3.6  rvest_0.3.2     
-    ## [37] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5   
-    ## [41] lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2
+    ##  [1] Rcpp_0.12.10     bindr_0.1        cellranger_1.1.0 compiler_3.4.0  
+    ##  [5] plyr_1.8.4       forcats_0.2.0    tools_3.4.0      digest_0.6.12   
+    ##  [9] lubridate_1.6.0  jsonlite_1.4     evaluate_0.10    nlme_3.1-131    
+    ## [13] gtable_0.2.0     lattice_0.20-35  rlang_0.1.1      psych_1.7.5     
+    ## [17] yaml_2.1.14      parallel_3.4.0   haven_1.0.0      xml2_1.1.1      
+    ## [21] stringr_1.2.0    httr_1.2.1       knitr_1.16       hms_0.3         
+    ## [25] rprojroot_1.2    grid_3.4.0       glue_1.1.0       R6_2.2.0        
+    ## [29] readxl_1.0.0     foreign_0.8-67   rmarkdown_1.6    modelr_0.1.0    
+    ## [33] reshape2_1.4.2   magrittr_1.5     backports_1.0.5  scales_0.4.1    
+    ## [37] htmltools_0.3.6  rvest_0.3.2      assertthat_0.2.0 mnormt_1.5-5    
+    ## [41] colorspace_1.3-2 stringi_1.1.5    lazyeval_0.2.0   munsell_0.4.3   
+    ## [45] broom_0.4.2

@@ -8,6 +8,7 @@ output:
 ```{r load_packages, message=FALSE}
 # Load packages
 library(tidyverse)
+library(feather)
 library(data.table)
 
 # Load functions
@@ -26,8 +27,8 @@ source("../R scripts/functions.R")
 
 ```{r load_analysis_01}
 # Load data
-analysis_01 <- read_rds("../data/analysis_01.rds")
-check_data(analysis_01) # 2,448,638 observations and 50 variables
+analysis_01 <- read_feather("../data/analysis_01.feather")
+check_data(analysis_01) # 2,448,638 observations and 52 variables
 ```
 
 ```{r}
@@ -40,7 +41,7 @@ dt <- as.data.table(analysis_01)
 # Create new var, SSRI, that is equal to 1 if any drug within id and day is an SSRI
 dt[, ssri := if_else(any(tccode == "581600"), 1, 0, NA_real_), by = .(id, days)]
 # select(dt, id, days, tccode, ssri) %>% filter(id == 100088)
-check_data(dt) # 2,448,638 observations and 51 variables
+check_data(dt) # 2,448,638 observations and 53 variables
 ```
 
 ## Now that SSRI is distributed within id and day, keep one row per day 
@@ -48,13 +49,13 @@ check_data(dt) # 2,448,638 observations and 51 variables
 ```{r one_row_per_ssri}
 # Drop tccode
 dt[, tccode := NULL]
-check_data(dt) # 2,448,638 observations and 50 variables
+check_data(dt) # 2,448,638 observations and 52 variables
 ```
 
 ```{r check_dups}
 # Create new logical var, dup, that is TRUE when the row is a duplicate
 dt[, dup := duplicated(dt)]
-check_data(dt) # 2,448,638 observations and 51 variables
+check_data(dt) # 2,448,638 observations and 53 variables
 ```
 
 ```{r}
@@ -65,7 +66,7 @@ sum(dt$dup) # 1,016,190
 ```{r drop_dups}
 # Drop duplicate rows
 dt <- dt[dup == FALSE, ]
-check_data(dt) # 1,432,448 observations and 50 variables
+check_data(dt) # 1,432,448 observations and 53 variables
 ```
 
 ```{r check_dups_02}
@@ -77,16 +78,16 @@ dt[, sum(dup)] # 0
 ```{r drop_dups_02}
 # Drop dup
 dt$dup <- NULL
-check_data(dt) # 1,432,448 observations and 50 variables
+check_data(dt) # 1,432,448 observations and 52 variables
 ```
 
 ```{r save_analysis_02}
 # Save progress
 analysis_02 <- dt
-write_rds(analysis_02, path = "../data/analysis_02.rds")
+write_feather(analysis_02, path = "../data/analysis_02.feather")
 ```
 
-At this point there are 1,432,448 observations and 50 variables. There are no duplicate rows in terms of id and days.
+At this point there are 1,432,448 observations and 52 variables. There are no duplicate rows in terms of id and days.
 
 
 
@@ -104,8 +105,8 @@ At this point there are 1,432,448 observations and 50 variables. There are no du
 
 ```{r load_analysis_02}
 # Load data
-analysis_02 <- read_rds("../data/analysis_02.rds")
-check_data(analysis_02) # 1,432,448 observations and 50 variables
+analysis_02 <- read_feather("../data/analysis_02.feather")
+check_data(analysis_02) # 1,432,448 observations and 52 variables
 ```
 
 ```{r}
@@ -127,7 +128,7 @@ dt[days == 0, .(.N, `Mean Age at Baseline` = mean(age), SD = sd(age), Min = min(
 ```{r save_analysis_03}
 # Save progress
 analysis_03 <- dt
-write_rds(analysis_03, path = "../data/analysis_03.rds")
+write_feather(analysis_03, path = "../data/analysis_03.feather")
 ```
 
 
@@ -146,8 +147,8 @@ write_rds(analysis_03, path = "../data/analysis_03.rds")
 
 ```{r load_analysis_03}
 # Load data
-analysis_03 <- read_rds("../data/analysis_03.rds")
-check_data(analysis_03) # 1,432,448 observations and 50 variables
+analysis_03 <- read_feather("../data/analysis_03.feather")
+check_data(analysis_03) # 1,432,448 observations and 52 variables
 ```
 
 ```{r}
@@ -200,7 +201,7 @@ dt[final_obs == TRUE, .(.N, `Mean Observations per Woman` = mean(obs), SD = sd(o
 
 ```{r dist_num_obs}
 dt[, num_obs := max(num_obs, na.rm = TRUE), by = id]
-attributes(dt$numobs)$label <- "Number of observations"
+attributes(dt$num_obs)$label <- "Number of observations"
 # select(dt, id, days, obs, num_obs)
 ```
 
@@ -217,14 +218,14 @@ dt[final_obs == TRUE, .(.N, `Mean Number of Years Enrolled` = mean(years), SD = 
 
 ```{r dist_years_since_enroll}
 dt[, total_years := max(total_years, na.rm = TRUE), by = id]
-attributes(dt$finalyears)$label <- "Total years since e/r @ last observation"
+attributes(dt$total_years)$label <- "Total years since e/r @ last observation"
 # select(dt, id, days, final_obs, years, total_years)
 ```
 
 ```{r save_analysis_04}
 # Save progress
 analysis_04 <- dt
-write_rds(analysis_04, path = "../data/analysis_04.rds")
+write_feather(analysis_04, path = "../data/analysis_04.feather")
 ```
 
 ```{r session_info, echo=FALSE}

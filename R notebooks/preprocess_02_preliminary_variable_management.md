@@ -1,10 +1,11 @@
 Preprocess 02: Preliminary Variable Management
 ================
-2017-05-29
+2017-07-17
 
 ``` r
 # Load packages
 library(tidyverse)
+library(feather)
 library(data.table)
 
 # Load functions
@@ -24,11 +25,11 @@ Dichotomize medications to reduce duplicated days
 
 ``` r
 # Load data
-analysis_01 <- read_rds("../data/analysis_01.rds")
-check_data(analysis_01) # 2,448,638 observations and 50 variables
+analysis_01 <- read_feather("../data/analysis_01.feather")
+check_data(analysis_01) # 2,448,638 observations and 52 variables
 ```
 
-    ## 2,448,638 observations and 50 variables
+    ## 2,448,638 observations and 52 variables
 
 ``` r
 dt <- as.data.table(analysis_01)
@@ -41,10 +42,10 @@ Tag observations with 581600 and distribute SSRI within id and days
 # Create new var, SSRI, that is equal to 1 if any drug within id and day is an SSRI
 dt[, ssri := if_else(any(tccode == "581600"), 1, 0, NA_real_), by = .(id, days)]
 # select(dt, id, days, tccode, ssri) %>% filter(id == 100088)
-check_data(dt) # 2,448,638 observations and 51 variables
+check_data(dt) # 2,448,638 observations and 53 variables
 ```
 
-    ## 2,448,638 observations and 51 variables
+    ## 2,448,638 observations and 53 variables
 
 Now that SSRI is distributed within id and day, keep one row per day
 --------------------------------------------------------------------
@@ -52,18 +53,18 @@ Now that SSRI is distributed within id and day, keep one row per day
 ``` r
 # Drop tccode
 dt[, tccode := NULL]
-check_data(dt) # 2,448,638 observations and 50 variables
+check_data(dt) # 2,448,638 observations and 52 variables
 ```
 
-    ## 2,448,638 observations and 50 variables
+    ## 2,448,638 observations and 52 variables
 
 ``` r
 # Create new logical var, dup, that is TRUE when the row is a duplicate
 dt[, dup := duplicated(dt)]
-check_data(dt) # 2,448,638 observations and 51 variables
+check_data(dt) # 2,448,638 observations and 53 variables
 ```
 
-    ## 2,448,638 observations and 51 variables
+    ## 2,448,638 observations and 53 variables
 
 ``` r
 # Count dup == TRUE
@@ -75,10 +76,10 @@ sum(dt$dup) # 1,016,190
 ``` r
 # Drop duplicate rows
 dt <- dt[dup == FALSE, ]
-check_data(dt) # 1,432,448 observations and 50 variables
+check_data(dt) # 1,432,448 observations and 53 variables
 ```
 
-    ## 1,432,448 observations and 51 variables
+    ## 1,432,448 observations and 53 variables
 
 ``` r
 # Any duplicates by id and days?
@@ -91,18 +92,18 @@ dt[, sum(dup)] # 0
 ``` r
 # Drop dup
 dt$dup <- NULL
-check_data(dt) # 1,432,448 observations and 50 variables
+check_data(dt) # 1,432,448 observations and 52 variables
 ```
 
-    ## 1,432,448 observations and 50 variables
+    ## 1,432,448 observations and 52 variables
 
 ``` r
 # Save progress
 analysis_02 <- dt
-write_rds(analysis_02, path = "../data/analysis_02.rds")
+write_feather(analysis_02, path = "../data/analysis_02.feather")
 ```
 
-At this point there are 1,432,448 observations and 50 variables. There are no duplicate rows in terms of id and days.
+At this point there are 1,432,448 observations and 52 variables. There are no duplicate rows in terms of id and days.
 
 ------------------------------------------------------------------------
 
@@ -113,11 +114,11 @@ Expand age across time
 
 ``` r
 # Load data
-analysis_02 <- read_rds("../data/analysis_02.rds")
-check_data(analysis_02) # 1,432,448 observations and 50 variables
+analysis_02 <- read_feather("../data/analysis_02.feather")
+check_data(analysis_02) # 1,432,448 observations and 52 variables
 ```
 
-    ## 1,432,448 observations and 50 variables
+    ## 1,432,448 observations and 52 variables
 
 ``` r
 dt <- as.data.table(analysis_02)
@@ -141,7 +142,7 @@ dt[days == 0, .(.N, `Mean Age at Baseline` = mean(age), SD = sd(age), Min = min(
 ``` r
 # Save progress
 analysis_03 <- dt
-write_rds(analysis_03, path = "../data/analysis_03.rds")
+write_feather(analysis_03, path = "../data/analysis_03.feather")
 ```
 
 ------------------------------------------------------------------------
@@ -153,11 +154,11 @@ Create variables: obs, finalobs, finalage, numobs, finalyears
 
 ``` r
 # Load data
-analysis_03 <- read_rds("../data/analysis_03.rds")
-check_data(analysis_03) # 1,432,448 observations and 50 variables
+analysis_03 <- read_feather("../data/analysis_03.feather")
+check_data(analysis_03) # 1,432,448 observations and 52 variables
 ```
 
-    ## 1,432,448 observations and 50 variables
+    ## 1,432,448 observations and 52 variables
 
 ``` r
 dt <- as.data.table(analysis_03)
@@ -226,7 +227,7 @@ Distribute num\_obs across observations
 
 ``` r
 dt[, num_obs := max(num_obs, na.rm = TRUE), by = id]
-attributes(dt$numobs)$label <- "Number of observations"
+attributes(dt$num_obs)$label <- "Number of observations"
 # select(dt, id, days, obs, num_obs)
 ```
 
@@ -248,14 +249,14 @@ Distribute total\_years across observations
 
 ``` r
 dt[, total_years := max(total_years, na.rm = TRUE), by = id]
-attributes(dt$finalyears)$label <- "Total years since e/r @ last observation"
+attributes(dt$total_years)$label <- "Total years since e/r @ last observation"
 # select(dt, id, days, final_obs, years, total_years)
 ```
 
 ``` r
 # Save progress
 analysis_04 <- dt
-write_rds(analysis_04, path = "../data/analysis_04.rds")
+write_feather(analysis_04, path = "../data/analysis_04.feather")
 ```
 
     ## R version 3.4.0 (2017-04-21)
@@ -273,18 +274,19 @@ write_rds(analysis_04, path = "../data/analysis_04.rds")
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] data.table_1.10.4 dplyr_0.5.0       purrr_0.2.2       readr_1.1.0      
-    ## [5] tidyr_0.6.2       tibble_1.3.0      ggplot2_2.2.1     tidyverse_1.1.1  
+    ## [1] data.table_1.10.4 feather_0.3.1     dplyr_0.7.0       purrr_0.2.2.2    
+    ## [5] readr_1.1.1       tidyr_0.6.3       tibble_1.3.3      ggplot2_2.2.1    
+    ## [9] tidyverse_1.1.1  
     ## 
     ## loaded via a namespace (and not attached):
     ##  [1] Rcpp_0.12.10     cellranger_1.1.0 compiler_3.4.0   plyr_1.8.4      
     ##  [5] forcats_0.2.0    tools_3.4.0      digest_0.6.12    lubridate_1.6.0 
-    ##  [9] jsonlite_1.4     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
-    ## [13] lattice_0.20-35  psych_1.7.5      DBI_0.6-1        yaml_2.1.14     
+    ##  [9] jsonlite_1.5     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
+    ## [13] lattice_0.20-35  rlang_0.1.1      psych_1.7.5      yaml_2.1.14     
     ## [17] parallel_3.4.0   haven_1.0.0      xml2_1.1.1       stringr_1.2.0   
     ## [21] httr_1.2.1       knitr_1.16       hms_0.3          rprojroot_1.2   
-    ## [25] grid_3.4.0       R6_2.2.0         readxl_1.0.0     foreign_0.8-67  
-    ## [29] rmarkdown_1.5    modelr_0.1.0     reshape2_1.4.2   magrittr_1.5    
-    ## [33] backports_1.0.5  scales_0.4.1     htmltools_0.3.6  rvest_0.3.2     
-    ## [37] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5   
-    ## [41] lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2
+    ## [25] grid_3.4.0       glue_1.1.0       R6_2.2.0         readxl_1.0.0    
+    ## [29] foreign_0.8-67   rmarkdown_1.6    modelr_0.1.0     reshape2_1.4.2  
+    ## [33] magrittr_1.5     backports_1.0.5  scales_0.4.1     htmltools_0.3.6 
+    ## [37] rvest_0.3.2      assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2
+    ## [41] stringi_1.1.5    lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2

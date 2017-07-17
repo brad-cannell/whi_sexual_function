@@ -1,6 +1,6 @@
 Preprocess 01: Read in SAS Data Set
 ================
-2017-05-29
+2017-07-17
 
 ------------------------------------------------------------------------
 
@@ -13,6 +13,7 @@ Preprocess 01: Read in SAS Data Set
 library(tidyverse)
 library(lubridate)
 library(haven)
+library(feather)
 library(data.table)
 
 # Load functions
@@ -27,25 +28,25 @@ finish <- now()
 difftime(finish, start)
 ```
 
-    ## Time difference of 5.767547 mins
+    ## Time difference of 5.808983 mins
 
 ``` r
-check_data(merged) # 2,448,638 observations and 815 variables
+check_data(merged) # 2,448,638 observations and 818 variables
 ```
 
-    ## 2,448,638 observations and 815 variables
+    ## 2,448,638 observations and 818 variables
 
 Quick Save
 
 ``` r
-write_rds(merged, path = "../data/merged.rds")
+write_feather(merged, path = "../data/merged.feather")
 ```
 
 Load data again (if needed)
 
 ``` r
-# merged <- read_rds("../data/merged.rds")
-# check_data(merged) # 2,448,638 observations and 815 variables
+# merged <- read_feather("../data/merged.feather")
+# check_data(merged) # 2,448,638 observations and 818 variables
 ```
 
 Set all variable names to lowercase
@@ -65,13 +66,13 @@ analysis_01 <- merged %>%
       id, days, age, ager, race_eth, edu4cat, inc5cat, inc5cat_f20, marital, married, sex, ctos, parity,
 
       # Health Behavior
-      texpwk, alcswk, f60alc, f60alcwk, f60caff, smoknow, smoking, horm, hormnw, tccode, livalor, livaln,
+      texpwk, alcswk, f60alc, f60alcwk, f60caff, packyrs, packyrsc, horm, hormnw, tccode, livalor, livaln,
 
       # Health and Wellness
       lifequal, pshtdep, bmi, genhel, hyst, nightswt, hotflash, vagdry, incont, atrophy,
 
       # Chronic Disease
-      arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad,
+      arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad, canc_f30, hip55,
 
       # Sexual Function
       sexactiv, satsex, satfrqsx,
@@ -79,10 +80,10 @@ analysis_01 <- merged %>%
       # Abuse
       phyab, verbab
   )
-check_data(analysis_01) # 2,448,638 observations and 50 variables
+check_data(analysis_01) # 2,448,638 observations and 52 variables
 ```
 
-    ## 2,448,638 observations and 50 variables
+    ## 2,448,638 observations and 52 variables
 
 Change " " in character vectors to NA
 =====================================
@@ -100,10 +101,10 @@ Data checks
 ===========
 
 ``` r
-check_data(analysis_01) # 2,448,638 observations and 50 variables
+check_data(analysis_01) # 2,448,638 observations and 52 variables
 ```
 
-    ## 2,448,638 observations and 50 variables
+    ## 2,448,638 observations and 52 variables
 
 ``` r
 count_ids(analysis_01$id) # 161,808 unique women
@@ -138,7 +139,7 @@ rm(check, start, finish)
 Save in R binary format
 
 ``` r
-write_rds(analysis_01, path = "../data/analysis_01.rds")
+write_feather(analysis_01, path = "../data/analysis_01.feather")
 ```
 
     ## R version 3.4.0 (2017-04-21)
@@ -156,20 +157,20 @@ write_rds(analysis_01, path = "../data/analysis_01.rds")
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ##  [1] data.table_1.10.4 haven_1.0.0       lubridate_1.6.0  
-    ##  [4] dplyr_0.5.0       purrr_0.2.2       readr_1.1.0      
-    ##  [7] tidyr_0.6.2       tibble_1.3.0      ggplot2_2.2.1    
-    ## [10] tidyverse_1.1.1  
+    ##  [1] bindrcpp_0.1      data.table_1.10.4 feather_0.3.1    
+    ##  [4] haven_1.0.0       lubridate_1.6.0   dplyr_0.7.0      
+    ##  [7] purrr_0.2.2.2     readr_1.1.1       tidyr_0.6.3      
+    ## [10] tibble_1.3.3      ggplot2_2.2.1     tidyverse_1.1.1  
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_0.12.10     cellranger_1.1.0 compiler_3.4.0   plyr_1.8.4      
-    ##  [5] forcats_0.2.0    tools_3.4.0      digest_0.6.12    jsonlite_1.4    
-    ##  [9] evaluate_0.10    nlme_3.1-131     gtable_0.2.0     lattice_0.20-35 
-    ## [13] psych_1.7.5      DBI_0.6-1        yaml_2.1.14      parallel_3.4.0  
-    ## [17] xml2_1.1.1       stringr_1.2.0    httr_1.2.1       knitr_1.16      
-    ## [21] hms_0.3          rprojroot_1.2    grid_3.4.0       R6_2.2.0        
-    ## [25] readxl_1.0.0     foreign_0.8-67   rmarkdown_1.5    modelr_0.1.0    
-    ## [29] reshape2_1.4.2   magrittr_1.5     backports_1.0.5  scales_0.4.1    
-    ## [33] htmltools_0.3.6  rvest_0.3.2      assertthat_0.2.0 mnormt_1.5-5    
-    ## [37] colorspace_1.3-2 stringi_1.1.5    lazyeval_0.2.0   munsell_0.4.3   
-    ## [41] broom_0.4.2
+    ##  [1] Rcpp_0.12.10     bindr_0.1        cellranger_1.1.0 compiler_3.4.0  
+    ##  [5] plyr_1.8.4       forcats_0.2.0    tools_3.4.0      digest_0.6.12   
+    ##  [9] jsonlite_1.5     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
+    ## [13] lattice_0.20-35  rlang_0.1.1      psych_1.7.5      yaml_2.1.14     
+    ## [17] parallel_3.4.0   xml2_1.1.1       stringr_1.2.0    httr_1.2.1      
+    ## [21] knitr_1.16       hms_0.3          rprojroot_1.2    grid_3.4.0      
+    ## [25] glue_1.1.0       R6_2.2.0         readxl_1.0.0     foreign_0.8-67  
+    ## [29] rmarkdown_1.6    modelr_0.1.0     reshape2_1.4.2   magrittr_1.5    
+    ## [33] backports_1.0.5  scales_0.4.1     htmltools_0.3.6  rvest_0.3.2     
+    ## [37] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5   
+    ## [41] lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2

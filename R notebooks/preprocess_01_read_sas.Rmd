@@ -16,6 +16,7 @@ output:
 library(tidyverse)
 library(lubridate)
 library(haven)
+library(feather)
 library(data.table)
 
 # Load functions
@@ -31,20 +32,20 @@ difftime(finish, start)
 ```
 
 ```{r}
-check_data(merged) # 2,448,638 observations and 815 variables
+check_data(merged) # 2,448,638 observations and 818 variables
 ```
 
 Quick Save
 
 ```{r}
-write_rds(merged, path = "../data/merged.rds")
+write_feather(merged, path = "../data/merged.feather")
 ```
 
 Load data again (if needed)
 
 ```{r}
-# merged <- read_rds("../data/merged.rds")
-# check_data(merged) # 2,448,638 observations and 815 variables
+# merged <- read_feather("../data/merged.feather")
+# check_data(merged) # 2,448,638 observations and 818 variables
 ```
 
 # Set all variable names to lowercase
@@ -62,13 +63,13 @@ analysis_01 <- merged %>%
 	  id, days, age, ager, race_eth, edu4cat, inc5cat, inc5cat_f20, marital, married, sex, ctos, parity,
 
 	  # Health Behavior
-	  texpwk, alcswk, f60alc, f60alcwk, f60caff, smoknow, smoking, horm, hormnw, tccode, livalor, livaln,
+	  texpwk, alcswk, f60alc, f60alcwk, f60caff, packyrs, packyrsc, horm, hormnw, tccode, livalor, livaln,
 
 	  # Health and Wellness
 	  lifequal, pshtdep, bmi, genhel, hyst, nightswt, hotflash, vagdry, incont, atrophy,
 
 	  # Chronic Disease
-	  arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad,
+	  arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad, canc_f30, hip55,
 
 	  # Sexual Function
 	  sexactiv, satsex, satfrqsx,
@@ -76,7 +77,7 @@ analysis_01 <- merged %>%
 	  # Abuse
 	  phyab, verbab
   )
-check_data(analysis_01) # 2,448,638 observations and 50 variables
+check_data(analysis_01) # 2,448,638 observations and 52 variables
 ```
 
 
@@ -94,7 +95,7 @@ analysis_01 <- analysis_01 %>%
 # Data checks
 
 ```{r}
-check_data(analysis_01) # 2,448,638 observations and 50 variables
+check_data(analysis_01) # 2,448,638 observations and 52 variables
 ```
 
 ```{r}
@@ -126,7 +127,7 @@ rm(check, start, finish)
 Save in R binary format
 
 ```{r}
-write_rds(analysis_01, path = "../data/analysis_01.rds")
+write_feather(analysis_01, path = "../data/analysis_01.feather")
 ```
 
 ```{r session_info, echo=FALSE}

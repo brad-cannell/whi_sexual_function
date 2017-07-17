@@ -1,10 +1,11 @@
 Preprocess 04: Manage Sexual Function Variables
 ================
-2017-05-29
+2017-07-17
 
 ``` r
 # Load packages
 library(tidyverse)
+library(feather)
 library(data.table)
 library(zoo)
 library(gmodels)
@@ -22,7 +23,7 @@ Clean outcome variables: Sexual function
 
 ``` r
 # Load data
-analysis_06 <- read_rds("../data/analysis_06.rds")
+analysis_06 <- read_feather("../data/analysis_06.feather")
 check_data(analysis_06) # 1,432,448 observations and 81 variables
 ```
 
@@ -197,7 +198,7 @@ dt[first_satfrqsx == 1, .(Women = .N), by = freq_satisfied_f][, Cumsum := cumsum
 ``` r
 # Save progress
 analysis_07 <- dt
-write_rds(analysis_07, path = "../data/analysis_07.rds")
+write_feather(analysis_07, path = "../data/analysis_07.feather")
 ```
 
     ## R version 3.4.0 (2017-04-21)
@@ -216,20 +217,20 @@ write_rds(analysis_07, path = "../data/analysis_07.rds")
     ## 
     ## other attached packages:
     ##  [1] gmodels_2.16.2    zoo_1.8-0         data.table_1.10.4
-    ##  [4] dplyr_0.5.0       purrr_0.2.2       readr_1.1.0      
-    ##  [7] tidyr_0.6.2       tibble_1.3.0      ggplot2_2.2.1    
-    ## [10] tidyverse_1.1.1  
+    ##  [4] feather_0.3.1     dplyr_0.7.0       purrr_0.2.2.2    
+    ##  [7] readr_1.1.1       tidyr_0.6.3       tibble_1.3.3     
+    ## [10] ggplot2_2.2.1     tidyverse_1.1.1  
     ## 
     ## loaded via a namespace (and not attached):
     ##  [1] Rcpp_0.12.10     cellranger_1.1.0 compiler_3.4.0   plyr_1.8.4      
     ##  [5] forcats_0.2.0    tools_3.4.0      digest_0.6.12    lubridate_1.6.0 
-    ##  [9] jsonlite_1.4     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
-    ## [13] lattice_0.20-35  psych_1.7.5      DBI_0.6-1        yaml_2.1.14     
+    ##  [9] jsonlite_1.5     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
+    ## [13] lattice_0.20-35  rlang_0.1.1      psych_1.7.5      yaml_2.1.14     
     ## [17] parallel_3.4.0   haven_1.0.0      xml2_1.1.1       stringr_1.2.0   
     ## [21] httr_1.2.1       knitr_1.16       gtools_3.5.0     hms_0.3         
-    ## [25] rprojroot_1.2    grid_3.4.0       R6_2.2.0         readxl_1.0.0    
-    ## [29] foreign_0.8-67   rmarkdown_1.5    gdata_2.17.0     modelr_0.1.0    
-    ## [33] reshape2_1.4.2   magrittr_1.5     MASS_7.3-47      backports_1.0.5 
-    ## [37] scales_0.4.1     htmltools_0.3.6  rvest_0.3.2      assertthat_0.2.0
-    ## [41] mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5    lazyeval_0.2.0  
-    ## [45] munsell_0.4.3    broom_0.4.2
+    ## [25] rprojroot_1.2    grid_3.4.0       glue_1.1.0       R6_2.2.0        
+    ## [29] readxl_1.0.0     foreign_0.8-67   rmarkdown_1.6    gdata_2.17.0    
+    ## [33] modelr_0.1.0     reshape2_1.4.2   magrittr_1.5     MASS_7.3-47     
+    ## [37] backports_1.0.5  scales_0.4.1     htmltools_0.3.6  rvest_0.3.2     
+    ## [41] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5   
+    ## [45] lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2

@@ -1,10 +1,11 @@
 Preprocess 03: Manage Abuse Variables
 ================
-2017-06-14
+2017-07-17
 
 ``` r
 # Load packages
 library(tidyverse)
+library(feather)
 library(data.table)
 library(gmodels)
 
@@ -39,7 +40,7 @@ Create dichotomous abuse at current observation variables
 
 ``` r
 # Load data
-analysis_04 <- read_rds("../data/analysis_04.rds")
+analysis_04 <- read_feather("../data/analysis_04.feather")
 check_data(analysis_04) # 1,432,448 observations and 58 variables
 ```
 
@@ -335,11 +336,13 @@ dt %>%
   format(big.mark = ",")
 ```
 
-    ##          verbab_ever_f   Women Cumulative_Sum Percent_of_Total
-    ## 1 Abuse never measured     156            156              0.1
-    ## 2  Unable to determine     575            731              0.4
-    ## 3                   No 134,795        135,526             83.3
-    ## 4                  Yes  26,282        161,808             16.2
+    ## [1] "# A tibble: 4 x 4"                                            
+    ## [2] "         verbab_ever_f  Women Cumulative_Sum Percent_of_Total"
+    ## [3] "                <fctr>  <int>          <int>            <dbl>"
+    ## [4] "1 Abuse never measured    156            156              0.1"
+    ## [5] "2  Unable to determine    575            731              0.4"
+    ## [6] "3                   No 134795         135526             83.3"
+    ## [7] "4                  Yes  26282         161808             16.2"
 
 ``` r
 # Abuse never measured: 156 women
@@ -359,7 +362,7 @@ dt %>%
   mutate(Percent = (Count / sum(Count) * 100) %>% round(1))
 ```
 
-    ## # A tibble: 2 × 3
+    ## # A tibble: 2 x 3
     ##   phyab_d_f Count Percent
     ##      <fctr> <int>   <dbl>
     ## 1        No   727    96.7
@@ -435,11 +438,13 @@ dt %>%
   format(big.mark = ",")
 ```
 
-    ##           phyab_ever_f   Women Cumulative_Sum Percent_of_Total
-    ## 1 Abuse never measured     156            156              0.1
-    ## 2  Unable to determine     404            560              0.2
-    ## 3                   No 157,959        158,519             97.6
-    ## 4                  Yes   3,289        161,808              2.0
+    ## [1] "# A tibble: 4 x 4"                                            
+    ## [2] "          phyab_ever_f  Women Cumulative_Sum Percent_of_Total"
+    ## [3] "                <fctr>  <int>          <int>            <dbl>"
+    ## [4] "1 Abuse never measured    156            156              0.1"
+    ## [5] "2  Unable to determine    404            560              0.2"
+    ## [6] "3                   No 157959         158519             97.6"
+    ## [7] "4                  Yes   3289         161808              2.0"
 
 ``` r
 # Abuse never measured: 156 women
@@ -459,7 +464,7 @@ dt %>%
   mutate(Percent = (Count / sum(Count) * 100) %>% round(1))
 ```
 
-    ## # A tibble: 2 × 3
+    ## # A tibble: 2 x 3
     ##   verbab_d_f Count Percent
     ##       <fctr> <int>   <dbl>
     ## 1         No   337    79.7
@@ -538,11 +543,13 @@ dt %>%
   format(big.mark = ",")
 ```
 
-    ##           abuse_ever_f   Women Cumulative_Sum Percent_of_Total
-    ## 1 Abuse never measured     156            156              0.1
-    ## 2  Unable to determine     846          1,002              0.5
-    ## 3                   No 133,929        134,931             82.8
-    ## 4                  Yes  26,877        161,808             16.6
+    ## [1] "# A tibble: 4 x 4"                                            
+    ## [2] "          abuse_ever_f  Women Cumulative_Sum Percent_of_Total"
+    ## [3] "                <fctr>  <int>          <int>            <dbl>"
+    ## [4] "1 Abuse never measured    156            156              0.1"
+    ## [5] "2  Unable to determine    846           1002              0.5"
+    ## [6] "3                   No 133929         134931             82.8"
+    ## [7] "4                  Yes  26877         161808             16.6"
 
 ``` r
 # Abuse never measured: 156 women
@@ -554,7 +561,7 @@ dt %>%
 ``` r
 # Save progress
 analysis_05 <- as_tibble(dt)
-write_rds(analysis_05, path = "../data/analysis_05.rds")
+write_feather(analysis_05, path = "../data/analysis_05.feather")
 ```
 
 ------------------------------------------------------------------------
@@ -566,7 +573,7 @@ Create baseline abuse status
 
 ``` r
 # Load data
-analysis_05 <- read_rds("../data/analysis_05.rds")
+analysis_05 <- read_feather("../data/analysis_05.feather")
 check_data(analysis_05) # 1,432,448 observations and 72 variables
 ```
 
@@ -656,99 +663,6 @@ dt[first_ab_obs == 1, .(Min = min(days), Mean = mean(days), Median = median(days
 
     ##     Min      Mean Median  Max
     ## 1: -867 -29.87915    -22 3981
-
-``` r
-dt[id == 109034]
-```
-
-    ##        id days age ager race_eth edu4cat inc5cat inc5cat_f20 marital
-    ## 1: 109034 -948  66   NA        1      NA      NA          NA      NA
-    ## 2: 109034 -883  67   NA       NA      NA      NA          NA      NA
-    ## 3: 109034 -867  67   NA       NA      NA      NA          NA      NA
-    ## 4: 109034   -6  69   NA       NA       4      NA           2       1
-    ## 5: 109034    0  69    2        1       4       2          NA      NA
-    ## 6: 109034 1026  72   NA       NA      NA      NA          NA      NA
-    ## 7: 109034 1030  72   NA       NA      NA      NA          NA      NA
-    ##    married sex ctos parity texpwk alcswk  f60alc f60alcwk  f60caff smoknow
-    ## 1:      NA  NA   NA     NA     NA     NA      NA       NA       NA      NA
-    ## 2:      NA  NA   NA     NA     NA     NA 0.00400        0 11.65063      NA
-    ## 3:       0   1   NA     NA     NA     NA      NA       NA       NA      NA
-    ## 4:      NA  NA   NA     -1  25.25      0      NA       NA       NA      NA
-    ## 5:      NA  NA    2     NA     NA     NA      NA       NA       NA      NA
-    ## 6:      NA  NA   NA     NA     NA     NA 0.01876        0 11.36355      NA
-    ## 7:       0  NA   NA     NA     NA     NA      NA       NA       NA      NA
-    ##    smoking horm hormnw livalor livaln lifequal pshtdep      bmi genhel
-    ## 1:      NA    1      1      NA     NA       NA      NA       NA     NA
-    ## 2:      NA   NA     NA      NA     NA       NA      NA       NA     NA
-    ## 3:      NA   NA     NA       1      1        9 0.00144       NA      2
-    ## 4:       0   NA     NA      NA     NA       NA      NA 21.24488     NA
-    ## 5:      NA   NA     NA      NA     NA       NA      NA       NA     NA
-    ## 6:      NA   NA     NA      NA     NA       NA      NA       NA     NA
-    ## 7:      NA   NA     NA      NA     NA       10 0.00144 21.17733      2
-    ##    hyst nightswt hotflash vagdry incont atrophy arthrit brca_f30 cervca
-    ## 1:    0       NA       NA     NA     NA      NA      NA       NA     NA
-    ## 2:   NA       NA       NA     NA     NA      NA      NA       NA     NA
-    ## 3:   NA        0        0      1      1      NA      NA       NA     NA
-    ## 4:   NA       NA       NA     NA     NA      NA      NA       NA     NA
-    ## 5:   NA       NA       NA     NA     NA      NA       0        0      0
-    ## 6:   NA       NA       NA     NA     NA      NA      NA       NA     NA
-    ## 7:   NA        0        1      1      1      NA      NA       NA     NA
-    ##    endo_f30 ovryca cvd diab hypt osteopor pad sexactiv satsex satfrqsx
-    ## 1:       NA     NA  NA    0   NA       NA  NA       NA     NA       NA
-    ## 2:       NA     NA  NA   NA   NA       NA  NA       NA     NA       NA
-    ## 3:       NA     NA  NA   NA   NA       NA  NA        0      1       NA
-    ## 4:       NA     NA  NA   NA   NA       NA  NA       NA     NA       NA
-    ## 5:        0      0   0   NA    0        0   0       NA     NA       NA
-    ## 6:       NA     NA  NA   NA   NA       NA  NA       NA     NA       NA
-    ## 7:       NA     NA  NA   NA   NA       NA  NA        0      4       NA
-    ##    phyab verbab ssri obs final_obs final_age num_obs numobs years
-    ## 1:    NA     NA   NA   1     FALSE        72       7   NULL    -3
-    ## 2:    NA     NA   NA   2     FALSE        72       7   NULL    -2
-    ## 3:     0      0   NA   3     FALSE        72       7   NULL    -2
-    ## 4:    NA     NA   NA   4     FALSE        72       7   NULL     0
-    ## 5:    NA     NA   NA   5     FALSE        72       7   NULL     0
-    ## 6:    NA     NA   NA   6     FALSE        72       7   NULL     3
-    ## 7:     0      0    0   7      TRUE        72       7   NULL     3
-    ##    total_years finalyears phyab_d          phyab_d_f verbab_d
-    ## 1:           3       NULL      -3 Abuse not measured       -3
-    ## 2:           3       NULL      -3 Abuse not measured       -3
-    ## 3:           3       NULL       0                 No        0
-    ## 4:           3       NULL      -3 Abuse not measured       -3
-    ## 5:           3       NULL      -3 Abuse not measured       -3
-    ## 6:           3       NULL      -3 Abuse not measured       -3
-    ## 7:           3       NULL       0                 No        0
-    ##            verbab_d_f abuse_d          abuse_d_f abuse4cat
-    ## 1: Abuse not measured      -3 Abuse not measured        -3
-    ## 2: Abuse not measured      -3 Abuse not measured        -3
-    ## 3:                 No       0                 No         0
-    ## 4: Abuse not measured      -3 Abuse not measured        -3
-    ## 5: Abuse not measured      -3 Abuse not measured        -3
-    ## 6: Abuse not measured      -3 Abuse not measured        -3
-    ## 7:                 No       0                 No         0
-    ##                 abuse4cat_f verbab_ever verbab_ever_f phyab_ever
-    ## 1:       Abuse not measured           0            No          0
-    ## 2:       Abuse not measured           0            No          0
-    ## 3: Did not experience abuse           0            No          0
-    ## 4:       Abuse not measured           0            No          0
-    ## 5:       Abuse not measured           0            No          0
-    ## 6:       Abuse not measured           0            No          0
-    ## 7: Did not experience abuse           0            No          0
-    ##    phyab_ever_f abuse_ever abuse_ever_f first_phyab_obs first_phyab
-    ## 1:           No          0           No              NA           0
-    ## 2:           No          0           No              NA           0
-    ## 3:           No          0           No            TRUE           0
-    ## 4:           No          0           No              NA           0
-    ## 5:           No          0           No              NA           0
-    ## 6:           No          0           No              NA           0
-    ## 7:           No          0           No           FALSE           0
-    ##    first_verbab_obs first_verbab first_ab_obs
-    ## 1:               NA            0           NA
-    ## 2:               NA            0           NA
-    ## 3:             TRUE            0         TRUE
-    ## 4:               NA            0           NA
-    ## 5:               NA            0           NA
-    ## 6:               NA            0           NA
-    ## 7:            FALSE            0           NA
 
 ``` r
 # How many women have a first abuse observation?
@@ -945,7 +859,7 @@ CrossTable(dt$first_abuse4cat)
 ``` r
 # Save progress
 analysis_06 <- as_tibble(dt)
-write_rds(analysis_06, path = "../data/analysis_06.rds")
+write_feather(analysis_06, path = "../data/analysis_06.feather")
 ```
 
     ## R version 3.4.0 (2017-04-21)
@@ -963,20 +877,21 @@ write_rds(analysis_06, path = "../data/analysis_06.rds")
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] gmodels_2.16.2    data.table_1.10.4 dplyr_0.5.0       purrr_0.2.2      
-    ## [5] readr_1.1.0       tidyr_0.6.2       tibble_1.3.0      ggplot2_2.2.1    
-    ## [9] tidyverse_1.1.1  
+    ##  [1] bindrcpp_0.1      gmodels_2.16.2    data.table_1.10.4
+    ##  [4] feather_0.3.1     dplyr_0.7.0       purrr_0.2.2.2    
+    ##  [7] readr_1.1.1       tidyr_0.6.3       tibble_1.3.3     
+    ## [10] ggplot2_2.2.1     tidyverse_1.1.1  
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_0.12.10     cellranger_1.1.0 compiler_3.4.0   plyr_1.8.4      
-    ##  [5] forcats_0.2.0    tools_3.4.0      digest_0.6.12    lubridate_1.6.0 
-    ##  [9] jsonlite_1.4     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
-    ## [13] lattice_0.20-35  psych_1.7.5      DBI_0.6-1        yaml_2.1.14     
-    ## [17] parallel_3.4.0   haven_1.0.0      xml2_1.1.1       stringr_1.2.0   
-    ## [21] httr_1.2.1       knitr_1.16       gtools_3.5.0     hms_0.3         
-    ## [25] rprojroot_1.2    grid_3.4.0       R6_2.2.0         readxl_1.0.0    
-    ## [29] foreign_0.8-67   rmarkdown_1.5    gdata_2.17.0     modelr_0.1.0    
-    ## [33] reshape2_1.4.2   magrittr_1.5     MASS_7.3-47      backports_1.0.5 
-    ## [37] scales_0.4.1     htmltools_0.3.6  rvest_0.3.2      assertthat_0.2.0
-    ## [41] mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5    lazyeval_0.2.0  
-    ## [45] munsell_0.4.3    broom_0.4.2
+    ##  [1] Rcpp_0.12.10     bindr_0.1        cellranger_1.1.0 compiler_3.4.0  
+    ##  [5] plyr_1.8.4       forcats_0.2.0    tools_3.4.0      digest_0.6.12   
+    ##  [9] lubridate_1.6.0  jsonlite_1.5     evaluate_0.10    nlme_3.1-131    
+    ## [13] gtable_0.2.0     lattice_0.20-35  rlang_0.1.1      psych_1.7.5     
+    ## [17] yaml_2.1.14      parallel_3.4.0   haven_1.0.0      xml2_1.1.1      
+    ## [21] stringr_1.2.0    httr_1.2.1       knitr_1.16       gtools_3.5.0    
+    ## [25] hms_0.3          rprojroot_1.2    grid_3.4.0       glue_1.1.0      
+    ## [29] R6_2.2.0         readxl_1.0.0     foreign_0.8-67   rmarkdown_1.6   
+    ## [33] gdata_2.17.0     modelr_0.1.0     reshape2_1.4.2   magrittr_1.5    
+    ## [37] MASS_7.3-47      backports_1.0.5  scales_0.4.1     htmltools_0.3.6 
+    ## [41] rvest_0.3.2      assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2
+    ## [45] stringi_1.1.5    lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2

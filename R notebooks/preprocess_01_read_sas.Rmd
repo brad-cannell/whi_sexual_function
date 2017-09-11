@@ -1,6 +1,6 @@
 ---
 title: 'Preprocess 01: Read in SAS Data Set'
-date: '`r Sys.Date()`'
+date: "Created: 2017-07-17 <br> Updated: `r Sys.Date()`"
 output:
   github_document: default
 ---

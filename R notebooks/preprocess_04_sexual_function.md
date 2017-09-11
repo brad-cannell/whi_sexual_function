@@ -1,6 +1,6 @@
 Preprocess 04: Manage Sexual Function Variables
 ================
-2017-07-17
+Created: 2017-07-17 <br> Updated: 2017-09-11
 
 ``` r
 # Load packages
@@ -201,9 +201,9 @@ analysis_07 <- dt
 write_feather(analysis_07, path = "../data/analysis_07.feather")
 ```
 
-    ## R version 3.4.0 (2017-04-21)
+    ## R version 3.4.1 (2017-06-30)
     ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-    ## Running under: macOS Sierra 10.12.5
+    ## Running under: macOS Sierra 10.12.6
     ## 
     ## Matrix products: default
     ## BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
@@ -217,20 +217,21 @@ write_feather(analysis_07, path = "../data/analysis_07.feather")
     ## 
     ## other attached packages:
     ##  [1] gmodels_2.16.2    zoo_1.8-0         data.table_1.10.4
-    ##  [4] feather_0.3.1     dplyr_0.7.0       purrr_0.2.2.2    
-    ##  [7] readr_1.1.1       tidyr_0.6.3       tibble_1.3.3     
+    ##  [4] feather_0.3.1     dplyr_0.7.3       purrr_0.2.3      
+    ##  [7] readr_1.1.1       tidyr_0.7.1       tibble_1.3.4     
     ## [10] ggplot2_2.2.1     tidyverse_1.1.1  
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_0.12.10     cellranger_1.1.0 compiler_3.4.0   plyr_1.8.4      
-    ##  [5] forcats_0.2.0    tools_3.4.0      digest_0.6.12    lubridate_1.6.0 
-    ##  [9] jsonlite_1.5     evaluate_0.10    nlme_3.1-131     gtable_0.2.0    
-    ## [13] lattice_0.20-35  rlang_0.1.1      psych_1.7.5      yaml_2.1.14     
-    ## [17] parallel_3.4.0   haven_1.0.0      xml2_1.1.1       stringr_1.2.0   
-    ## [21] httr_1.2.1       knitr_1.16       gtools_3.5.0     hms_0.3         
-    ## [25] rprojroot_1.2    grid_3.4.0       glue_1.1.0       R6_2.2.0        
-    ## [29] readxl_1.0.0     foreign_0.8-67   rmarkdown_1.6    gdata_2.17.0    
-    ## [33] modelr_0.1.0     reshape2_1.4.2   magrittr_1.5     MASS_7.3-47     
-    ## [37] backports_1.0.5  scales_0.4.1     htmltools_0.3.6  rvest_0.3.2     
-    ## [41] assertthat_0.2.0 mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5   
-    ## [45] lazyeval_0.2.0   munsell_0.4.3    broom_0.4.2
+    ##  [1] gtools_3.5.0     reshape2_1.4.2   haven_1.1.0      lattice_0.20-35 
+    ##  [5] colorspace_1.3-2 htmltools_0.3.6  yaml_2.1.14      rlang_0.1.2     
+    ##  [9] foreign_0.8-69   glue_1.1.1       modelr_0.1.1     readxl_1.0.0    
+    ## [13] bindrcpp_0.2     bindr_0.1        plyr_1.8.4       stringr_1.2.0   
+    ## [17] munsell_0.4.3    gtable_0.2.0     cellranger_1.1.0 rvest_0.3.2     
+    ## [21] psych_1.7.8      evaluate_0.10.1  knitr_1.17       forcats_0.2.0   
+    ## [25] parallel_3.4.1   broom_0.4.2      Rcpp_0.12.12     scales_0.5.0    
+    ## [29] backports_1.1.0  gdata_2.18.0     jsonlite_1.5     mnormt_1.5-5    
+    ## [33] hms_0.3          digest_0.6.12    stringi_1.1.5    grid_3.4.1      
+    ## [37] rprojroot_1.2    tools_3.4.1      magrittr_1.5     lazyeval_0.2.0  
+    ## [41] pkgconfig_2.0.1  MASS_7.3-47      xml2_1.1.1       lubridate_1.6.0 
+    ## [45] assertthat_0.2.0 rmarkdown_1.6    httr_1.3.1       R6_2.2.2        
+    ## [49] nlme_3.1-131     compiler_3.4.1

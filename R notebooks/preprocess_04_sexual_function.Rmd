@@ -1,6 +1,6 @@
 ---
 title: "Preprocess 04: Manage Sexual Function Variables"
-date: "`r Sys.Date()`"
+date: "Created: 2017-07-17 <br> Updated: `r Sys.Date()`"
 output: 
   github_document: default
 ---

@@ -1,6 +1,6 @@
 Preprocess 02: Preliminary Variable Management
 ================
-Created: 2017-07-17 <br> Updated: 2017-09-11
+Created: 2017-07-17 <br> Updated: 2017-09-20
 
 ``` r
 # Load packages
@@ -26,10 +26,10 @@ Dichotomize medications to reduce duplicated days
 ``` r
 # Load data
 analysis_01 <- read_feather("../data/analysis_01.feather")
-check_data(analysis_01) # 2,448,638 observations and 52 variables
+check_data(analysis_01) # 2,448,638 observations and 54 variables
 ```
 
-    ## 2,448,638 observations and 52 variables
+    ## 2,448,638 observations and 54 variables
 
 ``` r
 dt <- as.data.table(analysis_01)
@@ -42,10 +42,10 @@ Tag observations with 581600 and distribute SSRI within id and days
 # Create new var, SSRI, that is equal to 1 if any drug within id and day is an SSRI
 dt[, ssri := if_else(any(tccode == "581600"), 1, 0, NA_real_), by = .(id, days)]
 # select(dt, id, days, tccode, ssri) %>% filter(id == 100088)
-check_data(dt) # 2,448,638 observations and 53 variables
+check_data(dt) # 2,448,638 observations and 55 variables
 ```
 
-    ## 2,448,638 observations and 53 variables
+    ## 2,448,638 observations and 55 variables
 
 Now that SSRI is distributed within id and day, keep one row per day
 --------------------------------------------------------------------
@@ -53,18 +53,18 @@ Now that SSRI is distributed within id and day, keep one row per day
 ``` r
 # Drop tccode
 dt[, tccode := NULL]
-check_data(dt) # 2,448,638 observations and 52 variables
+check_data(dt) # 2,448,638 observations and 54 variables
 ```
 
-    ## 2,448,638 observations and 52 variables
+    ## 2,448,638 observations and 54 variables
 
 ``` r
 # Create new logical var, dup, that is TRUE when the row is a duplicate
 dt[, dup := duplicated(dt)]
-check_data(dt) # 2,448,638 observations and 53 variables
+check_data(dt) # 2,448,638 observations and 55 variables
 ```
 
-    ## 2,448,638 observations and 53 variables
+    ## 2,448,638 observations and 55 variables
 
 ``` r
 # Count dup == TRUE
@@ -76,10 +76,10 @@ sum(dt$dup) # 1,016,190
 ``` r
 # Drop duplicate rows
 dt <- dt[dup == FALSE, ]
-check_data(dt) # 1,432,448 observations and 53 variables
+check_data(dt) # 1,432,448 observations and 55 variables
 ```
 
-    ## 1,432,448 observations and 53 variables
+    ## 1,432,448 observations and 55 variables
 
 ``` r
 # Any duplicates by id and days?
@@ -92,10 +92,10 @@ dt[, sum(dup)] # 0
 ``` r
 # Drop dup
 dt$dup <- NULL
-check_data(dt) # 1,432,448 observations and 52 variables
+check_data(dt) # 1,432,448 observations and 54 variables
 ```
 
-    ## 1,432,448 observations and 52 variables
+    ## 1,432,448 observations and 54 variables
 
 ``` r
 # Save progress
@@ -103,7 +103,7 @@ analysis_02 <- dt
 write_feather(analysis_02, path = "../data/analysis_02.feather")
 ```
 
-At this point there are 1,432,448 observations and 52 variables. There are no duplicate rows in terms of id and days.
+At this point there are 1,432,448 observations and 54 variables. There are no duplicate rows in terms of id and days.
 
 ------------------------------------------------------------------------
 
@@ -115,10 +115,10 @@ Expand age across time
 ``` r
 # Load data
 analysis_02 <- read_feather("../data/analysis_02.feather")
-check_data(analysis_02) # 1,432,448 observations and 52 variables
+check_data(analysis_02) # 1,432,448 observations and 54 variables
 ```
 
-    ## 1,432,448 observations and 52 variables
+    ## 1,432,448 observations and 54 variables
 
 ``` r
 dt <- as.data.table(analysis_02)
@@ -155,10 +155,10 @@ Create variables: obs, finalobs, finalage, numobs, finalyears
 ``` r
 # Load data
 analysis_03 <- read_feather("../data/analysis_03.feather")
-check_data(analysis_03) # 1,432,448 observations and 52 variables
+check_data(analysis_03) # 1,432,448 observations and 54 variables
 ```
 
-    ## 1,432,448 observations and 52 variables
+    ## 1,432,448 observations and 54 variables
 
 ``` r
 dt <- as.data.table(analysis_03)

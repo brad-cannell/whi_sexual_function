@@ -26,7 +26,7 @@ source("../R scripts/functions.R")
 ```{r load_analysis_06}
 # Load data
 analysis_06 <- read_feather("../data/analysis_06.feather")
-check_data(analysis_06) # 1,432,448 observations and 81 variables
+check_data(analysis_06) # 1,432,448 observations and 83 variables
 ```
 
 ```{r}

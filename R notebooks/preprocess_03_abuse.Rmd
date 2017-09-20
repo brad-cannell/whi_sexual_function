@@ -43,7 +43,7 @@ Below are some hard things that sometimes happen to people. Please try to think 
 ```{r load_analysis_04}
 # Load data
 analysis_04 <- read_feather("../data/analysis_04.feather")
-check_data(analysis_04) # 1,432,448 observations and 58 variables
+check_data(analysis_04) # 1,432,448 observations and 60 variables
 ```
 
 ```{r}
@@ -350,7 +350,7 @@ write_feather(analysis_05, path = "../data/analysis_05.feather")
 ```{r load_analysis_05}
 # Load data
 analysis_05 <- read_feather("../data/analysis_05.feather")
-check_data(analysis_05) # 1,432,448 observations and 72 variables
+check_data(analysis_05) # 1,432,448 observations and 74 variables
 ```
 
 ```{r}

@@ -1,6 +1,6 @@
 Preprocess 04: Manage Sexual Function Variables
 ================
-Created: 2017-07-17 <br> Updated: 2017-09-11
+Created: 2017-07-17 <br> Updated: 2017-09-20
 
 ``` r
 # Load packages
@@ -24,10 +24,10 @@ Clean outcome variables: Sexual function
 ``` r
 # Load data
 analysis_06 <- read_feather("../data/analysis_06.feather")
-check_data(analysis_06) # 1,432,448 observations and 81 variables
+check_data(analysis_06) # 1,432,448 observations and 83 variables
 ```
 
-    ## 1,432,448 observations and 81 variables
+    ## 1,432,448 observations and 83 variables
 
 ``` r
 dt <- as.data.table(analysis_06)

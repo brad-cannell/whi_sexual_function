@@ -1,6 +1,6 @@
 Preprocess 01: Read in SAS Data Set
 ================
-Created: 2017-07-17 <br> Updated: 2017-09-11
+Created: 2017-07-17 <br> Updated: 2017-09-20
 
 ------------------------------------------------------------------------
 
@@ -28,13 +28,13 @@ finish <- now()
 difftime(finish, start)
 ```
 
-    ## Time difference of 5.748304 mins
+    ## Time difference of 6.241399 mins
 
 ``` r
-check_data(merged) # 2,448,638 observations and 818 variables
+check_data(merged) # 2,448,638 observations and 817 variables
 ```
 
-    ## 2,448,638 observations and 818 variables
+    ## 2,448,638 observations and 817 variables
 
 Quick Save
 
@@ -46,7 +46,7 @@ Load data again (if needed)
 
 ``` r
 # merged <- read_feather("../data/merged.feather")
-# check_data(merged) # 2,448,638 observations and 818 variables
+# check_data(merged) # 2,448,638 observations and 817
 ```
 
 Set all variable names to lowercase
@@ -63,7 +63,7 @@ Subset variables of interest
 analysis_01 <- merged %>% 
   select(
     # Administrative and Sociodemographic
-      id, days, age, ager, race_eth, edu4cat, inc5cat, inc5cat_f20, marital, married, sex, ctos, parity,
+      id, days, age, ager, race, ethnic, edu4cat, inc5cat, inc5cat_f20, marital, married, sex, ctos, parity,
 
       # Health Behavior
       texpwk, alcswk, f60alc, f60alcwk, f60caff, packyrs, packyrsc, horm, hormnw, tccode, livalor, livaln,
@@ -72,7 +72,7 @@ analysis_01 <- merged %>%
       lifequal, pshtdep, bmi, genhel, hyst, nightswt, hotflash, vagdry, incont, atrophy,
 
       # Chronic Disease
-      arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad, canc_f30, hip55,
+      arthrit, brca_f30, cervca, endo_f30, ovryca, cvd, diab, hypt, osteopor, pad, canc_f30, hip55, diabtrt,
 
       # Sexual Function
       sexactiv, satsex, satfrqsx,
@@ -80,10 +80,10 @@ analysis_01 <- merged %>%
       # Abuse
       phyab, verbab
   )
-check_data(analysis_01) # 2,448,638 observations and 52 variables
+check_data(analysis_01) # 2,448,638 observations and 54 variables
 ```
 
-    ## 2,448,638 observations and 52 variables
+    ## 2,448,638 observations and 54 variables
 
 Change " " in character vectors to NA
 =====================================
@@ -101,10 +101,10 @@ Data checks
 ===========
 
 ``` r
-check_data(analysis_01) # 2,448,638 observations and 52 variables
+check_data(analysis_01) # 2,448,638 observations and 54 variables
 ```
 
-    ## 2,448,638 observations and 52 variables
+    ## 2,448,638 observations and 54 variables
 
 ``` r
 count_ids(analysis_01$id) # 161,808 unique women

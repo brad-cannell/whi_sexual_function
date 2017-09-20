@@ -1,6 +1,6 @@
 Preprocess 03: Manage Abuse Variables
 ================
-Created: 2017-07-17 <br> Updated: 2017-09-11
+Created: 2017-07-17 <br> Updated: 2017-09-20
 
 ``` r
 # Load packages
@@ -41,10 +41,10 @@ Create dichotomous abuse at current observation variables
 ``` r
 # Load data
 analysis_04 <- read_feather("../data/analysis_04.feather")
-check_data(analysis_04) # 1,432,448 observations and 58 variables
+check_data(analysis_04) # 1,432,448 observations and 60 variables
 ```
 
-    ## 1,432,448 observations and 58 variables
+    ## 1,432,448 observations and 60 variables
 
 ``` r
 dt <- as.data.table(analysis_04)
@@ -574,10 +574,10 @@ Create baseline abuse status
 ``` r
 # Load data
 analysis_05 <- read_feather("../data/analysis_05.feather")
-check_data(analysis_05) # 1,432,448 observations and 72 variables
+check_data(analysis_05) # 1,432,448 observations and 74 variables
 ```
 
-    ## 1,432,448 observations and 72 variables
+    ## 1,432,448 observations and 74 variables
 
 ``` r
 dt <- as.data.table(analysis_05)

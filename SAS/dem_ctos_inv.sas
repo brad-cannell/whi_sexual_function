@@ -4,11 +4,11 @@
 * ============================================================================;
 
 * Setup libraries;
-filename demo "C:\Users\mbc0022\Dropbox\WHI Data\1. From WHI Website\
-All WHI Datasets\Demographics\data";
+filename demo "\\Mac\Dropbox\WHI Data\1. From WHI Website\All WHI Datasets\
+Demographics\data";
 
-libname whisf "C:\Users\mbc0022\Dropbox\Research\WHI\MS3226 - Sexual function\
-whiSexualFunction\data";
+libname whisf "\\Mac\Dropbox\Research\WHI\MS3226 - Sexual function\
+whi_sexual_function\data";
 
 options fmtsearch = (whisf);
 
@@ -189,10 +189,13 @@ data whisf.demo;
 	
 	* Collapse categories;
 	* Race / Ethnicity;
-	if ethnic in (1, 2, 8) then race_eth = 4; /*Other*/
-	else if ethnic = 3 then race_eth = 2;     /*AA*/
-	else if ethnic = 4 then race_eth = 3;     /*Hispanic*/
-	else if ethnic = 5 then race_eth = 1;     /*White*/
+	* Update 2017-09-19: Erika doesn't want these groups. I will keep the 
+	* original coding for this variable. It can be recoded later in R if need
+	* be.;
+	* if ethnic in (1, 2, 8) then race_eth = 4; /*Other*/
+	* else if ethnic = 3 then race_eth = 2;     /*AA*/
+	* else if ethnic = 4 then race_eth = 3;     /*Hispanic*/
+	* else if ethnic = 5 then race_eth = 1;     /*White*/
 	
 	* Education;
 	if educ in (1:4) then edu4cat = 1;       /*<HS*/
@@ -216,7 +219,7 @@ data whisf.demo;
 	days = 0;
 	
 	* Apply formats;
-	format race_eth race_eth. edu4cat edu4cat. inc5cat inc5cat.;
+	format edu4cat edu4cat. inc5cat inc5cat.;
 
 run;
 

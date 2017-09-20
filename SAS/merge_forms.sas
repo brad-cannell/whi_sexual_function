@@ -10,7 +10,7 @@
 * ============================================================================;
 
 * Setup libraries;
-libname whisf "C:\Users\mbc0022\Dropbox\Research\WHI\MS3226 - Sexual function\
+libname whisf "\\Mac\Dropbox\Research\WHI\MS3226 - Sexual function\
 whi_sexual_function\data";
 
 options fmtsearch = (whisf);
@@ -106,15 +106,16 @@ data whisf.merged;
 	by id days;
 run;
 
-ods html file = "C:\Users\mbc0022\Dropbox\Research\WHI\
-MS3226 - Sexual function\whi_sexual_function\SAS_reports\merged_codebook.html";
+ods html file = "\\Mac\Dropbox\Research\WHI\MS3226 - Sexual function\
+whi_sexual_function\SAS_reports\merged_codebook.html";
+
 title1 WHI Abuse and Sexual Function Study;
 title2 Merged Data Codebook;
 proc contents data = whisf.merged position;
 run;
 ods html close;
 title;
-* 2,448,638 observations and 815 variables;
+* 2,448,638 observations and 814 variables;
 
 
 
@@ -290,7 +291,7 @@ quit;
 data whisf.analysis_01;
 	set whisf.merged (keep =
 	/* Administrative and Sociodemographic */
-	id days age ager race_eth edu4cat inc5cat marital married sex ctos parity
+	id days age ager race ethnic edu4cat inc5cat marital married sex ctos parity
 
 	/* Health Behavior */
 	texpwk alcswk f60alc f60alcwk f60caff packyrs packyrsc horm hormnw tccode
@@ -301,7 +302,7 @@ data whisf.analysis_01;
 
 	/* Chronic Disease */
 	arthrit brca_f30 cervca endo_f30 ovryca cvd diab hypt osteopor pad
-	canc_f30 hip55
+	canc_f30 hip55 diabtrt
 
 	/* Sexual Function */
 	sexactiv satsex satfrqsx
@@ -313,4 +314,4 @@ run;
 ods html;
 proc contents data = whisf.analysis_01 position;
 run;
-* 2,448,638 observations and 51 variables;
+* 2,448,638 observations and 53 variables;

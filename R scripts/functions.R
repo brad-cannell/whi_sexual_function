@@ -77,8 +77,15 @@ distribute_ever <- function(x, ...) {
       zeros_after_1 <- zeros[zeros > first_1]       # Subset of 0 indicies that are higher than first_1
       first_0_after_1 <- min(zeros_after_1)         # Index for the first 0 that comes after any 1
       x[seq_along(x) >= first_0_after_1] <- 9       # Set to 9 if index is on or after the logic error
-      new_last_0 <- max(which(x == 0))              # New highest index for a 0 (no 0's after 1's anymore)
-      x[seq_along(x) < new_last_0] <- 0             # Set x to 0 in all positions before new_last_0
+      
+      # If there any 0's left
+      zeros <- which(x == 0)
+      if (length(zeros) > 0) {
+        new_last_0 <- max(which(x == 0))            # New highest index for a 0 (no 0's after 1's anymore)
+        x[seq_along(x) < new_last_0] <- 0           # Set x to 0 in all positions before new_last_0
+      }
+      
+      # If there are any NA's left between 1's and 9's
       new_first_1 <- min(which(x == 1))             # New highst index for 1
       x[is.na(x) & seq_along(x) > new_first_1] <- 1 # If there are any NA's after 1's, set to 1
       x

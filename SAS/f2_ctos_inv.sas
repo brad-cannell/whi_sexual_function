@@ -430,6 +430,20 @@ DATA whisf.f2_ctos_inv;
 
 RUN;
 
+* ============================================================================;
+* Checking diab and diabtrt
+* How many instances when a person answered yes to one and no to the other
+* ============================================================================;
+proc sql;
+select count(*) label = "diab = 0 and diabtrt = 1"
+	from whisf.f2
+	where diab = 0 & diabtrt = 1;
+
+select count(*) label = "diab = 1 and diabtrt = 0"
+	from whisf.f2
+	where diab = 1 & diabtrt = 0;
+quit;
+
 
 * ============================================================================;
 * Data management

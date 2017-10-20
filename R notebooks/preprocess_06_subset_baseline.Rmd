@@ -1,12 +1,13 @@
 ---
 title: "Preprocess 06: Subset Baseline Data"
-date: "`r Sys.Date()`"
+date: "Created: 2017-07-17 <br> Updated:`r Sys.Date()`"
 output: 
   github_document: default
 ---
 
 ```{r load_packages, message=FALSE}
 # Load packages
+library(feather)
 library(tidyverse)
 library(data.table)
 
@@ -56,8 +57,8 @@ Currently, all 161,808 women are still represented in the data.
 
 ```{r load_analysis_09}
 # Load data
-analysis_09 <- read_rds("../data/analysis_09.rds")
-check_data(analysis_09) # 1,432,448 observations and 127 variables
+analysis_09 <- read_feather("../data/analysis_09.feather")
+check_data(analysis_09) # 1,432,448 observations and 134 variables
 ```
 
 ```{r}
@@ -78,11 +79,12 @@ dt[abuse_ever == -3 & days == 0, baseline := TRUE]
 2017-06-26: Added hypertension
 
 ```{r subset_vars_of_interest}
-dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f, age,
-             age_group_f, race_eth_f, edu4cat_f, inc5cat_f, married_f, sex_f, ctos_f, parity_f, texpwk, alcswk,
-             f60caff, smoking_f, horm_f, hormnw_f, ssri_f, lifequal, pshtdep, bmi, good_health_f, hyst_f,
-             night_sweats_f, hot_flashes_f, vag_dry_f, incont_f, chronic_disease_f, baseline, hypt_f)]
-check_data(dt) # 1,432,448 observations and 36 variables
+dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f,
+             age, age_group_f, race_eth_f, edu4cat_f, edu2cat_f, inc5cat_f, married_f, ctos_f, 
+             packyrs, bmi, bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, 
+             diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, first_nightswt, 
+             hot_flashes_f, night_sweats_f, vag_dry_f, hormnw_f, sex, baseline)]
+check_data(dt) # 1,432,448 observations and 38 variables
 ```
 
 
@@ -127,6 +129,18 @@ count_ids(dt$id) # 83,402 unique women
 
 How many women report "never having sex" on the sexual orientation question
 
+```{r}
+dt <- dt %>%
+  mutate(
+    sex_f = factor(sex, levels = c(1, 2, 3, 4, 9), 
+                   labels = c("Have never had sex", "Sex with a woman or with women", 
+                              "Sex with a man or with men", "Sex with both men and women",
+                              "Prefer not to answer")
+    )
+  ) %>% 
+  as.data.table()
+```
+
 ```{r never_had_sex}
 dt[, length(unique(id)), by = sex_f]
 ```
@@ -139,7 +153,7 @@ count_ids(dt$id) # 83,329 unique women
 ```
 
 ```{r}
-check_data(dt) # 744,745 observations and 36 variables
+check_data(dt) # 744,745 observations and 39 variables
 ```
 
 ```{r}
@@ -212,7 +226,7 @@ count_ids(dt$id) # 83,145 unique women
 184 women were dropped from the data because their abuse status (4-level) could not be determined.
 
 ```{r}
-check_data(dt) # 743,094 observations and 36 variables
+check_data(dt) # 743,094 observations and 39 variables
 ```
 
 ```{r}
@@ -254,7 +268,7 @@ Save progress
 
 ```{r save_analysis_10}
 analysis_10 <- as_tibble(dt)
-write_rds(analysis_10, path = "../data/analysis_10.rds")
+write_feather(analysis_10, path = "../data/analysis_10.feather")
 ```
 
 
@@ -274,8 +288,8 @@ write_rds(analysis_10, path = "../data/analysis_10.rds")
 
 ```{r load_analysis_10}
 # Load data
-analysis_10 <- read_rds("../data/analysis_10.rds")
-check_data(analysis_10) # 743,094 observations and 36 variables
+analysis_10 <- read_feather("../data/analysis_10.feather")
+check_data(analysis_10) # 743,094 observations and 39 variables
 ```
 
 ```{r}
@@ -297,7 +311,7 @@ baseline_only <- dt %>% filter(baseline == TRUE)
 # Drop the baseline variable
 baseline_only$baseline <- NULL
 
-check_data(baseline_only) # 83,145 observations and 35 variables
+check_data(baseline_only) # 83,145 observations and 38 variables
 ```
 
 ## Create subgroups for Table 1 (no, any, verbal only, phys only, both)
@@ -329,12 +343,12 @@ cat("Total:", nrow(no_abuse) + nrow(verbal_only) + nrow(physical_only) + nrow(ve
 ## Save subgroup data for Table 1
 
 ```{r save_subgroups_for_table_1}
-write_rds(baseline_only, path = "../data/baseline_only.rds")
-write_rds(no_abuse, path = "../data/no_abuse.rds")
-write_rds(any_abuse, path = "../data/any_abuse.rds")
-write_rds(verbal_only, path = "../data/verbal_only.rds")
-write_rds(physical_only, path = "../data/physical_only.rds")
-write_rds(verbal_and_physical, path = "../data/verbal_and_physical.rds")
+write_feather(baseline_only, path = "../data/baseline_only.feather")
+write_feather(no_abuse, path = "../data/no_abuse.feather")
+write_feather(any_abuse, path = "../data/any_abuse.feather")
+write_feather(verbal_only, path = "../data/verbal_only.feather")
+write_feather(physical_only, path = "../data/physical_only.feather")
+write_feather(verbal_and_physical, path = "../data/verbal_and_physical.feather")
 ```
 
 ```{r session_info, echo=FALSE}

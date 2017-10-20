@@ -1,9 +1,10 @@
 Preprocess 06: Subset Baseline Data
 ================
-2017-06-26
+Created: 2017-07-17 <br> Updated:2017-10-20
 
 ``` r
 # Load packages
+library(feather)
 library(tidyverse)
 library(data.table)
 
@@ -50,11 +51,11 @@ Currently, all 161,808 women are still represented in the data.
 
 ``` r
 # Load data
-analysis_09 <- read_rds("../data/analysis_09.rds")
-check_data(analysis_09) # 1,432,448 observations and 127 variables
+analysis_09 <- read_feather("../data/analysis_09.feather")
+check_data(analysis_09) # 1,432,448 observations and 134 variables
 ```
 
-    ## 1,432,448 observations and 127 variables
+    ## 1,432,448 observations and 134 variables
 
 ``` r
 dt <- as.data.table(analysis_09)
@@ -76,14 +77,15 @@ Subset the variables of interest
 2017-06-26: Added hypertension
 
 ``` r
-dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f, age,
-             age_group_f, race_eth_f, edu4cat_f, inc5cat_f, married_f, sex_f, ctos_f, parity_f, texpwk, alcswk,
-             f60caff, smoking_f, horm_f, hormnw_f, ssri_f, lifequal, pshtdep, bmi, good_health_f, hyst_f,
-             night_sweats_f, hot_flashes_f, vag_dry_f, incont_f, chronic_disease_f, baseline, hypt_f)]
-check_data(dt) # 1,432,448 observations and 36 variables
+dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f,
+             age, age_group_f, race_eth_f, edu4cat_f, edu2cat_f, inc5cat_f, married_f, ctos_f, 
+             packyrs, bmi, bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, 
+             diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, first_nightswt, 
+             hot_flashes_f, night_sweats_f, vag_dry_f, hormnw_f, sex, baseline)]
+check_data(dt) # 1,432,448 observations and 38 variables
 ```
 
-    ## 1,432,448 observations and 36 variables
+    ## 1,432,448 observations and 38 variables
 
 ------------------------------------------------------------------------
 
@@ -129,15 +131,28 @@ count_ids(dt$id) # 83,402 unique women
 How many women report "never having sex" on the sexual orientation question
 
 ``` r
+dt <- dt %>%
+  mutate(
+    sex_f = factor(sex, levels = c(1, 2, 3, 4, 9), 
+                   labels = c("Have never had sex", "Sex with a woman or with women", 
+                              "Sex with a man or with men", "Sex with both men and women",
+                              "Prefer not to answer")
+    )
+  ) %>% 
+  as.data.table()
+```
+
+``` r
 dt[, length(unique(id)), by = sex_f]
 ```
 
     ##                             sex_f    V1
     ## 1:     Sex with a man or with men 80895
-    ## 2:                             NA  1368
-    ## 3:    Sex with both men and women   863
-    ## 4:             Have never had sex    73
-    ## 5: Sex with a woman or with women   203
+    ## 2:           Prefer not to answer   929
+    ## 3:                             NA   439
+    ## 4:    Sex with both men and women   863
+    ## 5:             Have never had sex    73
+    ## 6: Sex with a woman or with women   203
 
 ``` r
 drop_ids <- dt[baseline == 1 & sex_f == "Have never had sex", id]
@@ -149,10 +164,10 @@ count_ids(dt$id) # 83,329 unique women
     ## 83,329 unique women
 
 ``` r
-check_data(dt) # 744,745 observations and 36 variables
+check_data(dt) # 744,745 observations and 39 variables
 ```
 
-    ## 744,745 observations and 36 variables
+    ## 744,745 observations and 39 variables
 
 ``` r
 # Clean up
@@ -249,10 +264,10 @@ count_ids(dt$id) # 83,145 unique women
 184 women were dropped from the data because their abuse status (4-level) could not be determined.
 
 ``` r
-check_data(dt) # 743,094 observations and 36 variables
+check_data(dt) # 743,094 observations and 39 variables
 ```
 
-    ## 743,094 observations and 36 variables
+    ## 743,094 observations and 39 variables
 
 ``` r
 # Clean up
@@ -296,7 +311,7 @@ Save progress
 
 ``` r
 analysis_10 <- as_tibble(dt)
-write_rds(analysis_10, path = "../data/analysis_10.rds")
+write_feather(analysis_10, path = "../data/analysis_10.feather")
 ```
 
 ------------------------------------------------------------------------
@@ -308,11 +323,11 @@ Create data subsets for Table 1 (prior to multiple imputation)
 
 ``` r
 # Load data
-analysis_10 <- read_rds("../data/analysis_10.rds")
-check_data(analysis_10) # 743,094 observations and 36 variables
+analysis_10 <- read_feather("../data/analysis_10.feather")
+check_data(analysis_10) # 743,094 observations and 39 variables
 ```
 
-    ## 743,094 observations and 36 variables
+    ## 743,094 observations and 39 variables
 
 ``` r
 count_ids(analysis_10$id) # 83,145 unique women
@@ -337,10 +352,10 @@ baseline_only <- dt %>% filter(baseline == TRUE)
 # Drop the baseline variable
 baseline_only$baseline <- NULL
 
-check_data(baseline_only) # 83,145 observations and 35 variables
+check_data(baseline_only) # 83,145 observations and 38 variables
 ```
 
-    ## 83,145 observations and 35 variables
+    ## 83,145 observations and 38 variables
 
 Create subgroups for Table 1 (no, any, verbal only, phys only, both)
 --------------------------------------------------------------------
@@ -378,17 +393,17 @@ Save subgroup data for Table 1
 ------------------------------
 
 ``` r
-write_rds(baseline_only, path = "../data/baseline_only.rds")
-write_rds(no_abuse, path = "../data/no_abuse.rds")
-write_rds(any_abuse, path = "../data/any_abuse.rds")
-write_rds(verbal_only, path = "../data/verbal_only.rds")
-write_rds(physical_only, path = "../data/physical_only.rds")
-write_rds(verbal_and_physical, path = "../data/verbal_and_physical.rds")
+write_feather(baseline_only, path = "../data/baseline_only.feather")
+write_feather(no_abuse, path = "../data/no_abuse.feather")
+write_feather(any_abuse, path = "../data/any_abuse.feather")
+write_feather(verbal_only, path = "../data/verbal_only.feather")
+write_feather(physical_only, path = "../data/physical_only.feather")
+write_feather(verbal_and_physical, path = "../data/verbal_and_physical.feather")
 ```
 
-    ## R version 3.4.0 (2017-04-21)
+    ## R version 3.4.1 (2017-06-30)
     ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-    ## Running under: macOS Sierra 10.12.5
+    ## Running under: macOS Sierra 10.12.6
     ## 
     ## Matrix products: default
     ## BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
@@ -401,20 +416,21 @@ write_rds(verbal_and_physical, path = "../data/verbal_and_physical.rds")
     ## [1] stats     graphics  grDevices utils     datasets  methods   base     
     ## 
     ## other attached packages:
-    ## [1] bindrcpp_0.1      data.table_1.10.4 dplyr_0.7.0       purrr_0.2.2.2    
-    ## [5] readr_1.1.1       tidyr_0.6.3       tibble_1.3.3      ggplot2_2.2.1    
-    ## [9] tidyverse_1.1.1  
+    ##  [1] bindrcpp_0.2      data.table_1.10.4 dplyr_0.7.3      
+    ##  [4] purrr_0.2.3       readr_1.1.1       tidyr_0.7.1      
+    ##  [7] tibble_1.3.4      ggplot2_2.2.1     tidyverse_1.1.1  
+    ## [10] feather_0.3.1    
     ## 
     ## loaded via a namespace (and not attached):
-    ##  [1] Rcpp_0.12.10     bindr_0.1        cellranger_1.1.0 compiler_3.4.0  
-    ##  [5] plyr_1.8.4       forcats_0.2.0    tools_3.4.0      digest_0.6.12   
-    ##  [9] lubridate_1.6.0  jsonlite_1.4     evaluate_0.10    nlme_3.1-131    
-    ## [13] gtable_0.2.0     lattice_0.20-35  rlang_0.1.1      psych_1.7.5     
-    ## [17] yaml_2.1.14      parallel_3.4.0   haven_1.0.0      xml2_1.1.1      
-    ## [21] stringr_1.2.0    httr_1.2.1       knitr_1.16       hms_0.3         
-    ## [25] rprojroot_1.2    grid_3.4.0       glue_1.1.0       R6_2.2.0        
-    ## [29] readxl_1.0.0     foreign_0.8-67   rmarkdown_1.6    modelr_0.1.0    
-    ## [33] reshape2_1.4.2   magrittr_1.5     backports_1.0.5  scales_0.4.1    
-    ## [37] htmltools_0.3.6  rvest_0.3.2      assertthat_0.2.0 mnormt_1.5-5    
-    ## [41] colorspace_1.3-2 stringi_1.1.5    lazyeval_0.2.0   munsell_0.4.3   
-    ## [45] broom_0.4.2
+    ##  [1] Rcpp_0.12.12     cellranger_1.1.0 compiler_3.4.1   plyr_1.8.4      
+    ##  [5] bindr_0.1        forcats_0.2.0    tools_3.4.1      digest_0.6.12   
+    ##  [9] lubridate_1.6.0  jsonlite_1.5     evaluate_0.10.1  nlme_3.1-131    
+    ## [13] gtable_0.2.0     lattice_0.20-35  pkgconfig_2.0.1  rlang_0.1.2     
+    ## [17] psych_1.7.8      yaml_2.1.14      parallel_3.4.1   haven_1.1.0     
+    ## [21] xml2_1.1.1       httr_1.3.1       stringr_1.2.0    knitr_1.17      
+    ## [25] hms_0.3          rprojroot_1.2    grid_3.4.1       glue_1.1.1      
+    ## [29] R6_2.2.2         readxl_1.0.0     foreign_0.8-69   rmarkdown_1.6   
+    ## [33] modelr_0.1.1     reshape2_1.4.2   magrittr_1.5     backports_1.1.0 
+    ## [37] scales_0.5.0     htmltools_0.3.6  rvest_0.3.2      assertthat_0.2.0
+    ## [41] mnormt_1.5-5     colorspace_1.3-2 stringi_1.1.5    lazyeval_0.2.0  
+    ## [45] munsell_0.4.3    broom_0.4.2

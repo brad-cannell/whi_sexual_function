@@ -1,6 +1,6 @@
 Preprocess 05: Clean and Manage Covariates
 ================
-Created: 2017-07-17 <br> Updated: 2017-09-26
+Created: 2017-07-17 <br> Updated: 2017-10-23
 
 ``` r
 # Load packages
@@ -536,27 +536,27 @@ Create categorical BMI variable
 ``` r
 dt <- dt %>% mutate(bmi4cat = case_when(
   is.na(bmi) ~ NA_real_, # Missing
-  bmi < 18.5 ~ 1,        # Underweight
-  bmi < 25   ~ 2,        # Normal weight
-  bmi < 30   ~ 3,        # Overweight
-  TRUE       ~ 4         # Obese
+  bmi < 25 ~ 1,          # < 25
+  bmi < 30 ~ 2,          # 25-29
+  bmi < 35 ~ 3,          # 30-34
+  TRUE     ~ 4           # 35+
   )
 ) %>% 
 as.data.table()
 ```
 
 ``` r
-dt[, bmi4cat_f := factor(bmi4cat, labels = c("Underweight", "Normal weight", "Overweight", "Obese"))]
+dt[, bmi4cat_f := factor(bmi4cat, labels = c("< 25", "25-29", "30-34", "35+"))]
 dt[obs ==1][order(bmi4cat_f), .(Women = .N), by = bmi4cat_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 ```
 
-    ##        bmi4cat_f  Women Cumsum     Percent
-    ## 1:   Underweight     24     24  0.01483239
-    ## 2: Normal weight    686    710  0.42395926
-    ## 3:    Overweight    697   1407  0.43075744
-    ## 4:         Obese    586   1993  0.36215762
-    ## 5:            NA 159815 161808 98.76829329
+    ##    bmi4cat_f  Women Cumsum    Percent
+    ## 1:      < 25    710    710  0.4387917
+    ## 2:     25-29    697   1407  0.4307574
+    ## 3:     30-34    344   1751  0.2125976
+    ## 4:       35+    242   1993  0.1495600
+    ## 5:        NA 159815 161808 98.7682933
 
 ### Hysterectomy ever
 
@@ -945,7 +945,7 @@ write_feather(analysis_09, path = "../data/analysis_09.feather")
 
     ## R version 3.4.1 (2017-06-30)
     ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-    ## Running under: macOS Sierra 10.12.6
+    ## Running under: macOS High Sierra 10.13
     ## 
     ## Matrix products: default
     ## BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib

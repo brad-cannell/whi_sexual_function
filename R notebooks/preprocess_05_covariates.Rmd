@@ -383,17 +383,17 @@ Create categorical BMI variable
 ```{r}
 dt <- dt %>% mutate(bmi4cat = case_when(
   is.na(bmi) ~ NA_real_, # Missing
-  bmi < 18.5 ~ 1,        # Underweight
-  bmi < 25   ~ 2,        # Normal weight
-  bmi < 30   ~ 3,        # Overweight
-  TRUE       ~ 4         # Obese
+  bmi < 25 ~ 1,          # < 25
+  bmi < 30 ~ 2,          # 25-29
+  bmi < 35 ~ 3,          # 30-34
+  TRUE     ~ 4           # 35+
   )
 ) %>% 
 as.data.table()
 ```
 
 ```{r}
-dt[, bmi4cat_f := factor(bmi4cat, labels = c("Underweight", "Normal weight", "Overweight", "Obese"))]
+dt[, bmi4cat_f := factor(bmi4cat, labels = c("< 25", "25-29", "30-34", "35+"))]
 dt[obs ==1][order(bmi4cat_f), .(Women = .N), by = bmi4cat_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 ```

@@ -8,18 +8,19 @@ output:
 ```{r setup, include=FALSE}
 # Load packages
 library(tidyverse)
+library(feather)
 
 # Load functions
 source("../R scripts/table_1_functions.R")
 ```
 
 ```{r load_data, include=FALSE}
-baseline_only <- read_rds(path = "../data/baseline_only.rds")
-no_abuse <- read_rds(path = "../data/no_abuse.rds")
-any_abuse <- read_rds(path = "../data/any_abuse.rds")
-verbal_only <- read_rds(path = "../data/verbal_only.rds")
-physical_only <- read_rds(path = "../data/physical_only.rds")
-verbal_and_physical <- read_rds(path = "../data/verbal_and_physical.rds")
+baseline_only <- read_feather(path = "../data/baseline_only.feather")
+no_abuse <- read_feather(path = "../data/no_abuse.feather")
+any_abuse <- read_feather(path = "../data/any_abuse.feather")
+verbal_only <- read_feather(path = "../data/verbal_only.feather")
+physical_only <- read_feather(path = "../data/physical_only.feather")
+verbal_and_physical <- read_feather(path = "../data/verbal_and_physical.feather")
 ```
 
 <!-- Group N's -->
@@ -43,61 +44,55 @@ table_01 <- tibble(
 compare_groups <- c("no_abuse", "any_abuse", "verbal_only", "physical_only",
   "verbal_and_physical")
 
-demo1 <- continuous_rows(variables = "age", groups = compare_groups)
-
-demo2 <- categorical_rows(variables = c("age_group_f", "race_eth_f", "edu4cat_f",
-  "inc5cat_f", "married_f", "sex_f", "ctos_f", "parity_f"),
+demo <- categorical_rows(variables = c("age_group_f", "race_eth_f", "edu2cat_f",
+  "inc5cat_f", "married_f", "ctos_f"),
   groups = compare_groups)
 
-behavior1 <- continuous_rows(variables = c("texpwk", "alcswk", "f60caff"),
+smoking <- continuous_rows(variables = "packyrs", groups = compare_groups)
+
+health <- categorical_rows(variables = c("bmi4cat_f", "hyst_f", "incont_f", "hypt_f", "cvd_f", 
+  "arthrit_f", "diab_combined_f", "canc_f", "hip55_f", "good_health_f"),
   groups = compare_groups)
 
-behavior2 <- categorical_rows(variables = c("smoking_f", "horm_f", "hormnw_f",
-  "ssri_f"), groups = compare_groups)
+depression <- continuous_rows(variables = "pshtdep", groups = compare_groups)
 
-ment_hlth1 <- continuous_rows(variables = c("lifequal", "pshtdep", "bmi"),
+menopausal <- categorical_rows(variables = c("ssri_f", "night_sweats_f", "hot_flashes_f", "vag_dry_f", 
+  "hormnw_f"),
   groups = compare_groups)
 
-phys_hlth1 <- categorical_rows(variables = c("good_health_f", "hyst_f",
-  "night_sweats_f", "hot_flashes_f", "vag_dry_f", "incont_f",
-  "chronic_disease_f"), groups = compare_groups)
-
-table_01 <- rbind(table_01, demo1, demo2, behavior1, behavior2, ment_hlth1, phys_hlth1)
+table_01 <- rbind(table_01, demo, smoking, health, depression, menopausal)
 
 # Improve readability
 table_01 <- table_01 %>%
   mutate(
     # Sociodemographics
-    variable = if_else(variable == "age", "Age, mean (sd)", variable),
     variable = if_else(variable == "age_group_f", "Age group, n (%)", variable),
     variable = if_else(variable == "race_eth_f", "Race and Ethnicity, n (%)", variable),
-    variable = if_else(variable == "edu4cat_f", "Education, n (%)", variable),
+    variable = if_else(variable == "edu2cat_f", "Education, n (%)", variable),
     variable = if_else(variable == "inc5cat_f", "Income, n (%)", variable),
-    variable = if_else(variable == "married_f", "Married, n (%)", variable),
-    variable = if_else(variable == "sex_f", "Who you have had sex with, n (%)", variable),
-    variable = if_else(variable == "ctos_f", "Clinical trial or observational study, n (%)", variable),
-    variable = if_else(variable == "parity_f", "Parity, n (%)", variable),
+    variable = if_else(variable == "married_f", "Married or in an intimate relationship, n (%)", variable),
+    variable = if_else(variable == "ctos_f", "WHI study component, n (%)", variable),
 
-    # Health Behavior
-    variable = if_else(variable == "texpwk", "Physical activity (MET-hours/week), mean (sd)", variable),
-    variable = if_else(variable == "alcswk", "Alcohol servings per week, mean (sd)", variable),
-    variable = if_else(variable == "f60caff", "Dietary caffeine (mg), mean (sd)", variable),
-    variable = if_else(variable == "smoking_f", "Smoking status, n (%)", variable),
-    variable = if_else(variable == "horm_f", "Female hormones ever, n (%)", variable),
-    variable = if_else(variable == "hormnw_f", "Female hormones now, n (%)", variable),
-    variable = if_else(variable == "ssri_f", "Taking SSRI, n (%)", variable),
-
-    # Health and Wellness
-    variable = if_else(variable == "lifequal", "Quality of life, mean (sd)", variable),
-    variable = if_else(variable == "pshtdep", "Shortened CES-D/DIS, mean (sd)", variable),
-    variable = if_else(variable == "bmi", "Body Mass Index, mean (sd)", variable),
-    variable = if_else(variable == "good_health_f", "Good or better health, n (%)", variable),
+    # Health/health risk factors
+    variable = if_else(variable == "packyrs", "Pack-years of Smoking, mean (sd)", variable),
+    variable = if_else(variable == "bmi4cat_f", "Body Mass Index, n (%)", variable),
     variable = if_else(variable == "hyst_f", "Hysterectomy ever, n (%)", variable),
+    variable = if_else(variable == "incont_f", "Urinary incontinence ever, n (%)", variable),
+    variable = if_else(variable == "hypt_f", "Hypertension ever, n (%)", variable),
+    variable = if_else(variable == "cvd_f", "Cardiovascular disease ever, n (%)", variable),
+    variable = if_else(variable == "arthrit_f", "Arthritis ever, n (%)", variable),
+    variable = if_else(variable == "diab_combined_f", "Diabetes ever, n (%)", variable),
+    variable = if_else(variable == "canc_f", "Cancer ever, n (%)", variable),
+    variable = if_else(variable == "hip55_f", "Hip Fracture at Age 55 or Older, n (%)", variable),
+    variable = if_else(variable == "good_health_f", "Good or better health, n (%)", variable),
+    variable = if_else(variable == "pshtdep", "Shortened CES-D/DIS, mean (sd)", variable),
+    variable = if_else(variable == "ssri_f", "Current use of SSRI, n (%)", variable),
+
+    # Menopausal symptoms/treatment variables that affect menopausal symptoms
     variable = if_else(variable == "night_sweats_f", "Night sweats, n (%)", variable),
     variable = if_else(variable == "hot_flashes_f", "Hot flashes, n (%)", variable),
     variable = if_else(variable == "vag_dry_f", "Vaginal or genital dryness, n (%)", variable),
-    variable = if_else(variable == "incont_f", "Ever leaked urine, n (%)", variable),
-    variable = if_else(variable == "chronic_disease_f", "Chronic Disease, n (%)", variable)
+    variable = if_else(variable == "hormnw_f", "Female hormones now, n (%)", variable)
   )
 
 # Remove duplicate variable names for categorical variables
@@ -114,9 +109,7 @@ table_01 <- table_01 %>%
     x = NULL
   )
 
-rm(behavior1, behavior2, demo1, demo2, demo3, ment_hlth1, ment_hlth2,
-   phys_hlth1, phys_hlth2, phys_hlth3, compare_groups, categorical_rows,
-   continuous_rows, n_mean, n_percent)
+rm(demo, smoking, health, depression, menopausal)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}

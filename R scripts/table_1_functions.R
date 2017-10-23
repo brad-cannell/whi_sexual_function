@@ -18,9 +18,9 @@ n_percent <- function(x, ...) {
   # Grab n's and format with commas
   n <- table(x) %>% format(., big.mark = ",") %>% as.data.frame()
   # Calculate percentages
-  percent <- table(x) %>% prop.table() %>% `*`(100) %>% round(., 1) %>% as.data.frame()
-  # Format percentages to always show 1 decimal place
-  percent$Freq <- format(percent$Freq, nsmall = 1)
+  percent <- table(x) %>% prop.table() %>% `*`(100) %>% round(., 2) %>% as.data.frame()
+  # Format percentages to always show 2 decimal places
+  percent$Freq <- format(percent$Freq, nsmall = 2)
   # Paste together n and percent
   percent$Freq <- paste0(n$., " (", percent$Freq, " %)")
   # Rename columns
@@ -34,7 +34,7 @@ n_percent <- function(x, ...) {
 n_mean <- function(x, ...) {
   # Grab n's and format with commas
   n <- sum(!is.na(x)) %>% format(., big.mark = ",")
-  # Calculate mean and format to always show 1 decimal place
+  # Calculate mean and format to always show 2 decimal places
   mean <- mean(x, na.rm = TRUE) %>% round(., 2) %>% format(., nsmall = 2)
   # Paste together n and mean
   n_mean <- paste0(n, " (", mean, ")")

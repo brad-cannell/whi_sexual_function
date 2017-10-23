@@ -1,6 +1,6 @@
 Preprocess 06: Subset Baseline Data
 ================
-Created: 2017-07-17 <br> Updated:2017-10-20
+Created: 2017-07-17 <br> Updated:2017-10-23
 
 ``` r
 # Load packages
@@ -26,25 +26,24 @@ source("../R scripts/functions.R")
     -   Education
     -   Income
     -   Marital status
-    -   Sexual orientation
     -   Study component
-    -   Parity
-    -   Physical activity
-    -   Alcohol use
-    -   Caffeine use
     -   Smoking
-    -   Hormone use
-    -   Taking SSRIs
-    -   Quality of life
-    -   Depression
     -   BMI
-    -   General health
     -   Hysterectomy
+    -   Urinary incontinence
+    -   Hypertension
+    -   Cardivascular disease
+    -   Arthritis
+    -   Diabetes
+    -   Cancer
+    -   Hip fracture after age 55
+    -   Self-rated health
+    -   Depressive symptoms
+    -   Taking SSRIs
     -   Night sweats
     -   Hot flashes
     -   Vaginal dryness
-    -   Urinary incontinence
-    -   Chronic disease
+    -   Hormone use
 -   The first set of analyses will be cross-sectional, and use only baseline measures
 
 Currently, all 161,808 women are still represented in the data.
@@ -403,7 +402,7 @@ write_feather(verbal_and_physical, path = "../data/verbal_and_physical.feather")
 
     ## R version 3.4.1 (2017-06-30)
     ## Platform: x86_64-apple-darwin15.6.0 (64-bit)
-    ## Running under: macOS Sierra 10.12.6
+    ## Running under: macOS High Sierra 10.13
     ## 
     ## Matrix products: default
     ## BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib

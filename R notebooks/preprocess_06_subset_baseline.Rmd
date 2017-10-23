@@ -31,25 +31,24 @@ source("../R scripts/functions.R")
     + Education   
     + Income   
     + Marital status    
-    + Sexual orientation    
-    + Study component     
-    + Parity    
-    + Physical activity    
-    + Alcohol use     
-    + Caffeine use    
-    + Smoking    
-    + Hormone use    
-    + Taking SSRIs    
-    + Quality of life   
-    + Depression    
-    + BMI    
-    + General health    
-    + Hysterectomy    
+    + Study component 
+    + Smoking 
+    + BMI
+    + Hysterectomy 
+    + Urinary incontinence
+    + Hypertension
+    + Cardivascular disease
+    + Arthritis
+    + Diabetes
+    + Cancer
+    + Hip fracture after age 55
+    + Self-rated health
+    + Depressive symptoms
+    + Taking SSRIs 
     + Night sweats    
     + Hot flashes    
-    + Vaginal dryness    
-    + Urinary incontinence    
-    + Chronic disease
+    + Vaginal dryness
+    + Hormone use    
 
 * The first set of analyses will be cross-sectional, and use only baseline measures
 

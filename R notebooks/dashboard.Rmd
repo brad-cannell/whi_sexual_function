@@ -8,27 +8,35 @@ output:
 
 ```{r setup, include=FALSE}
 # Load packages
-library(flexdashboard)
 library(tidyverse)
+library(flexdashboard)
+library(bfuncs)
 library(ggrepel)
 library(feather)
 ```
 
 ```{r load_data}
-analysis_11 <- read_feather("../data/analysis_11.feather") # Stacked imputed data - don't use.
-baseline_only <- read_feather(path = "../data/baseline_only.feather")
-no_abuse <- read_feather(path = "../data/no_abuse.feather")
-any_abuse <- read_feather(path = "../data/any_abuse.feather")
-verbal_only <- read_feather(path = "../data/verbal_only.feather")
-physical_only <- read_feather(path = "../data/physical_only.feather")
-verbal_and_physical <- read_feather(path = "../data/verbal_and_physical.feather")
-table_01_n <- nrow(baseline_only) %>% format(big.mark = ",")
+analysis_10 <- read_feather("../data/analysis_10.feather") 
+# analysis_10 is created at the very end of preprocess_06_subset_baseline
 ```
 
-```{r}
-# A little bit of data management
-# Since we are only using 4-level abuse in the MI models, we dropped the 2-level abuse variable.
-# Not a problem, just recode from 
+```{r echo=FALSE, eval=FALSE}
+about_data(analysis_10) # 743,094 observations and 39 variables
+```
+
+```{r echo=FALSE}
+baseline_only <- analysis_10 %>% filter(baseline == TRUE)
+
+no_abuse  <- baseline_only %>% filter(abuse_d_f == "No")
+any_abuse <- baseline_only %>% filter(abuse_d_f == "Yes")
+
+verbal_only         <- baseline_only %>% filter(abuse4cat_f == "Verbal abuse only")
+physical_only       <- baseline_only %>% filter(abuse4cat_f == "Physical abuse only")
+verbal_and_physical <- baseline_only %>% filter(abuse4cat_f == "Physical and verbal abuse")
+```
+
+```{r echo=FALSE}
+table_01_n <- nrow(baseline_only) %>% format(big.mark = ",")
 ```
 
 

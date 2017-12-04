@@ -1,0 +1,572 @@
+---
+title: "Exploring logistic models before creating Table 2"
+date: "Created: 2017-05-29 <br> Updated: `r Sys.Date()`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_packages,include=FALSE}
+# Load packages
+library(tidyverse)
+library(feather)
+library(bfuncs)
+library(mice)
+library(broom)
+library(modelr)
+```
+
+```{r load_data, include=FALSE}
+# Load data
+mids_83329 <- read_rds(path = "../data/mids_83329.rds")
+analysis_11 <- read_feather("../data/analysis_11.feather")
+```
+
+```{r}
+about_data(analysis_11) # 916,619 observations and 59 variables
+```
+
+
+From Erika 2017-07-17: 
+
+## Step 2: Compute odds of sexual satisfaction (Table 2). 
+
+Conduct adjusted models to examine cross-sectional odds of sexual satisfaction (Global/frequency), with sequential modeling as described below. Use multiple imputation to account for the missingness of chronic disease information. Sequential modeling as follows:
+
+**Model 1 (Sociodemographics):**   
+* Age   
+* Race & Ethnicity   
+* Education   
+* Income   
+* Marital Status   
+* WHI study component   
+	
+**Model 2 (Health/health risk factors + Model 1):**   
+* All Model 1 variables   
+* Pack years of smoking   
+* Body mass index (BMI)   
+* Hysterectomy ever   
+* Urinary incontinence ever   
+* Hypertension ever (variable label = hypt; self-report Form 30)   
+* Cardiovascular disease ever (variable label = CVD; self-report Form 30)   
+* Arthritis ever (Label = arthrit; self-report Form 30)   
+* Cancer ever (Label = canc_f30; Form 30)   
+* Diabetes ever (Variable label = diab & diabtrt; self-report Form 2)   
+* Hip fracture age 55 or older (Variable label = hip55; self-report Form 30)   
+* Self-rated health   
+* Depressive symptoms   
+* Current use of SSRI   
+
+**Model 3 (Menopausal symptoms/treatment variables that impact menopausal + Model 1 +Model 2):**   
+* All Model 1 variables   
+* All Model 2 variables   
+* Night sweats   
+* Hot flashes   
+* Vaginal dryness   
+* Current use of female hormone therapy   
+
+### Let's explore the variable distributions by imputation status
+
+What does the distribution of satisfied by abuse look like?
+
+```{r}
+analysis_11 %>% 
+  filter(!.imp == 0) %>% 
+  group_by(abuse, satisfied_f) %>% 
+  freq_table() %>% 
+  select(1:3, percent_row, lcl_row_log, ucl_row_log) %>% 
+  filter(satisfied_f == "Yes")
+```
+
+```{r}
+analysis_11 %>% 
+  filter(!.imp == 0) %>%
+  group_by(abuse, freq_satisfied_f) %>% 
+  freq_table() %>% 
+  select(1:3, percent_row, lcl_row_log, ucl_row_log)
+```
+
+## Using mice::with with return a Multiply imputed repeated analyses (MIRA) object
+
+Create helper function for displaying model output
+
+```{r}
+tidy_output <- function(x, ...) {
+  x %>% 
+    summary() %>% 
+    tidy() %>% 
+    mutate(
+    est = exp(est) %>% round(2) %>% format(nsmall = 2L),
+    lo.95 = exp(lo.95) %>% round(2) %>% format(nsmall = 2L),
+    hi.95 = exp(hi.95) %>% round(2) %>% format(nsmall = 2L),
+    or_95 = paste0(est, " (", lo.95, " - ", hi.95, ")")
+  ) %>% 
+  select(.rownames, est, lo.95, hi.95, or_95)
+}
+```
+
+
+
+
+
+
+
+
+
+
+## Unadjusted model dissatisfaction
+
+-------------------------------------------------------------------------------
+
+```{r}
+unadj_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+unadj_dissat_pool <- pool(unadj_dissat)
+unadj_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 1 dissatisfaction
+
+* Age   
+* Race & Ethnicity   
+* Education   
+* Income   
+* Marital Status   
+* WHI study component   
+
+```{r}
+m1_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m1_dissat_pool <- pool(m1_dissat)
+m1_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 2 dissatisfaction
+
+* All Model 1 variables   
+* Pack years of smoking   
+* Body mass index (BMI)   
+* Hysterectomy ever   
+* Urinary incontinence ever   
+* Hypertension ever (variable label = hypt; self-report Form 30)   
+* Cardiovascular disease ever (variable label = CVD; self-report Form 30)   
+* Arthritis ever (Label = arthrit; self-report Form 30)   
+* Cancer ever (Label = canc_f30; Form 30)   
+* Diabetes ever (Variable label = diab & diabtrt; self-report Form 2)   
+* Hip fracture age 55 or older (Variable label = hip55; self-report Form 30)   
+* Self-rated health   
+* Depressive symptoms   
+* Current use of SSRI  
+
+```{r}
+m2_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m2_dissat_pool <- pool(m2_dissat)
+m2_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 3 dissatisfaction
+
+* All Model 1 variables   
+* All Model 2 variables   
+* Night sweats   
+* Hot flashes   
+* Vaginal dryness   
+* Current use of female hormone therapy 
+
+```{r}
+m3_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f + night_sweats_f + hot_flashes_f + vag_dry_f +
+      hormnw_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m3_dissat_pool <- pool(m3_dissat)
+m3_dissat_pool %>% tidy_output()
+```
+
+
+
+
+
+
+
+
+
+
+## Unadjusted model frequency dissatisfaction
+
+-------------------------------------------------------------------------------
+
+```{r}
+unadj_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+unadj_freq_dissat_pool <- pool(unadj_freq_dissat)
+unadj_freq_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 1 frequency dissatisfaction
+
+* Age   
+* Race & Ethnicity   
+* Education   
+* Income   
+* Marital Status   
+* WHI study component   
+
+```{r}
+m1_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m1_freq_dissat_pool <- pool(m1_freq_dissat)
+m1_freq_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 2 frequency dissatisfaction
+
+* All Model 1 variables   
+* Pack years of smoking   
+* Body mass index (BMI)   
+* Hysterectomy ever   
+* Urinary incontinence ever   
+* Hypertension ever (variable label = hypt; self-report Form 30)   
+* Cardiovascular disease ever (variable label = CVD; self-report Form 30)   
+* Arthritis ever (Label = arthrit; self-report Form 30)   
+* Cancer ever (Label = canc_f30; Form 30)   
+* Diabetes ever (Variable label = diab & diabtrt; self-report Form 2)   
+* Hip fracture age 55 or older (Variable label = hip55; self-report Form 30)   
+* Self-rated health   
+* Depressive symptoms   
+* Current use of SSRI  
+
+```{r}
+m2_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m2_freq_dissat_pool <- pool(m2_freq_dissat)
+m2_freq_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 3 frequency dissatisfaction
+
+* All Model 1 variables   
+* All Model 2 variables   
+* Night sweats   
+* Hot flashes   
+* Vaginal dryness   
+* Current use of female hormone therapy 
+
+```{r}
+m3_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f + night_sweats_f + hot_flashes_f + vag_dry_f +
+      hormnw_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m3_freq_dissat_pool <- pool(m3_freq_dissat)
+m3_freq_dissat_pool %>% tidy_output()
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+## Step 3: Investigation of interaction – does abuse type matter?   
+For the full sample, investigate whether there is an interaction of abuse type on sexual satisfaction. This will inform how we do subsidiary analyses/format what was Table 3.
+
+```{r}
+unadj_dissat_interaction <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse4cat_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+unadj_dissat_interaction <- pool(unadj_dissat_interaction)
+unadj_dissat_interaction %>% tidy_output()
+```
+
+```{r}
+levels(analysis_11$abuse4cat_f)
+```
+
+
+```{r}
+analysis_11 %>% 
+  filter(!.imp == 0) %>% 
+  group_by(abuse4cat_f, dissatisfied) %>% 
+  freq_table() %>% 
+  select(1:3, percent_row, lcl_row_log, ucl_row_log) %>% 
+  filter(dissatisfied == 1)
+```
+
+Are verbal abuse only, physical abuse only, and both different from each other?
+
+## Adjusted model 1 dissatisfaction
+
+* Age   
+* Race & Ethnicity   
+* Education   
+* Income   
+* Marital Status   
+* WHI study component   
+
+```{r}
+m1_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse4cat_f + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m1_dissat_pool <- pool(m1_dissat)
+m1_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 2 dissatisfaction
+
+* All Model 1 variables   
+* Pack years of smoking   
+* Body mass index (BMI)   
+* Hysterectomy ever   
+* Urinary incontinence ever   
+* Hypertension ever (variable label = hypt; self-report Form 30)   
+* Cardiovascular disease ever (variable label = CVD; self-report Form 30)   
+* Arthritis ever (Label = arthrit; self-report Form 30)   
+* Cancer ever (Label = canc_f30; Form 30)   
+* Diabetes ever (Variable label = diab & diabtrt; self-report Form 2)   
+* Hip fracture age 55 or older (Variable label = hip55; self-report Form 30)   
+* Self-rated health   
+* Depressive symptoms   
+* Current use of SSRI  
+
+```{r}
+m2_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse4cat_f + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m2_dissat_pool <- pool(m2_dissat)
+m2_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 3 dissatisfaction
+
+* All Model 1 variables   
+* All Model 2 variables   
+* Night sweats   
+* Hot flashes   
+* Vaginal dryness   
+* Current use of female hormone therapy 
+
+```{r}
+m3_dissat <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse4cat_f + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f + night_sweats_f + hot_flashes_f + vag_dry_f +
+      hormnw_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m3_dissat_pool <- pool(m3_dissat)
+m3_dissat_pool %>% tidy_output()
+```
+
+
+
+
+
+
+
+
+
+
+## Unadjusted model frequency dissatisfaction
+
+-------------------------------------------------------------------------------
+
+```{r}
+unadj_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse4cat_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+unadj_freq_dissat_pool <- pool(unadj_freq_dissat)
+unadj_freq_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 1 frequency dissatisfaction
+
+* Age   
+* Race & Ethnicity   
+* Education   
+* Income   
+* Marital Status   
+* WHI study component   
+
+```{r}
+m1_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse4cat_f + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m1_freq_dissat_pool <- pool(m1_freq_dissat)
+m1_freq_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 2 frequency dissatisfaction
+
+* All Model 1 variables   
+* Pack years of smoking   
+* Body mass index (BMI)   
+* Hysterectomy ever   
+* Urinary incontinence ever   
+* Hypertension ever (variable label = hypt; self-report Form 30)   
+* Cardiovascular disease ever (variable label = CVD; self-report Form 30)   
+* Arthritis ever (Label = arthrit; self-report Form 30)   
+* Cancer ever (Label = canc_f30; Form 30)   
+* Diabetes ever (Variable label = diab & diabtrt; self-report Form 2)   
+* Hip fracture age 55 or older (Variable label = hip55; self-report Form 30)   
+* Self-rated health   
+* Depressive symptoms   
+* Current use of SSRI  
+
+```{r}
+m2_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse4cat_f + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m2_freq_dissat_pool <- pool(m2_freq_dissat)
+m2_freq_dissat_pool %>% tidy_output()
+```
+
+## Adjusted model 3 frequency dissatisfaction
+
+* All Model 1 variables   
+* All Model 2 variables   
+* Night sweats   
+* Hot flashes   
+* Vaginal dryness   
+* Current use of female hormone therapy 
+
+```{r}
+m3_freq_dissat <- with(mids_83329, 
+  glm(
+    freq_dissatisfied ~ abuse4cat_f + age + race_eth_f + edu2cat_f + inc5cat_f + 
+      married_f + ctos_f + packyrs + bmi + hyst_f + incont_f + hypt_f +
+      cvd_f + arthrit_f + canc_f + diab_f + hip55_f + good_health_f + 
+      pshtdep + ssri_f + night_sweats_f + hot_flashes_f + vag_dry_f +
+      hormnw_f,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m3_freq_dissat_pool <- pool(m3_freq_dissat)
+m3_freq_dissat_pool %>% tidy_output()
+```

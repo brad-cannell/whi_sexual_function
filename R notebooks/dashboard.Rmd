@@ -11,15 +11,16 @@ output:
 library(flexdashboard)
 library(tidyverse)
 library(ggrepel)
+library(feather)
 ```
 
 ```{r load_data}
-baseline_only <- read_rds(path = "../data/baseline_only.rds")
-no_abuse <- read_rds(path = "../data/no_abuse.rds")
-any_abuse <- read_rds(path = "../data/any_abuse.rds")
-verbal_only <- read_rds(path = "../data/verbal_only.rds")
-physical_only <- read_rds(path = "../data/physical_only.rds")
-verbal_and_physical <- read_rds(path = "../data/verbal_and_physical.rds")
+baseline_only <- read_feather(path = "../data/baseline_only.feather")
+no_abuse <- read_feather(path = "../data/no_abuse.feather")
+any_abuse <- read_feather(path = "../data/any_abuse.feather")
+verbal_only <- read_feather(path = "../data/verbal_only.feather")
+physical_only <- read_feather(path = "../data/physical_only.feather")
+verbal_and_physical <- read_feather(path = "../data/verbal_and_physical.feather")
 table_01_n <- nrow(baseline_only) %>% format(big.mark = ",")
 ```
 

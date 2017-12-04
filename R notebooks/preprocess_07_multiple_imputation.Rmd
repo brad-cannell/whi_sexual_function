@@ -1,207 +1,155 @@
 ---
 title: "Preprocess 07: Multiple Imputation"
-date: "`r Sys.Date()`"
+date: "Created: 2017-05-29 <br> Updated: `r Sys.Date()`"
 output: 
   github_document: default
 ---
 
 ```{r load_packages, message=FALSE}
+Sys.setenv(TZ = "US/Central")
+
 # Load packages
+library(feather)
 library(tidyverse)
 library(data.table)
 library(mice)
 library(lubridate)
-
-# Load functions
-source("../R scripts/functions.R")
+library(bfuncs)
 ```
 
 -------------------------------------------------------------------------------
 
-# Multiple Imputation
+# Preprocessing for Multiple Imputation
 
 -------------------------------------------------------------------------------
 
 ```{r load_baseline_only}
 # Load data
-baseline_only <- read_rds("../data/baseline_only.rds")
-check_data(baseline_only) # 83,145 observations and 34 variables
+baseline_only <- read_feather("../data/baseline_only.feather")
+about_data(baseline_only) # 83,145 observations and 53 variables
 ```
 
 ```{r}
-count_ids(baseline_only$id) # 83,145 unique women
+count_ids(baseline_only$id) # 83,329 unique women
 ```
 
-```{r}
-dt <- as.data.table(baseline_only)
-```
-&nbsp;
-
-Currently, the data includes information from 83,218 unique women. All women reported sexual activity in the past year. Additionally, each woman's abuse status can be determined.
+Currently, the data includes information from 83,145 unique women. All women reported sexual activity in the past year. Additionally, each woman's abuse status can be determined.
 
 ## View the number and percent missing for each variable
 
-```{r mice_dry_run}
-ini <- mice(dt, maxit = 0)
+```{r}
+ini <- mice(baseline_only, maxit = 0)
 ```
 
-```{r number_missing}
+```{r}
 ini$nmis[order(ini$nmis)]
 ```
-&nbsp;
-
-```{r percent_missing}
-(ini$nmis[order(ini$nmis)] / nrow(dt) * 100) %>% round(1)
-```
-&nbsp;
-
-BMI, SSRI, chronic disease, caffeine, and hormone now all have a lot of missing.
-
-## Preparing data for multiple imputation
-
-```{r load_analysis_10_again}
-analysis_10 <- read_rds("../data/analysis_10.rds")
-
-# Drop satfrqsx_f - only needed for table 3.
-analysis_10 <- analysis_10 %>% select(-satfrqsx_f)
-
-check_data(analysis_10) # 743,094 observations and 34 variables
-```
 
 ```{r}
-dt <- as.data.table(analysis_10)
+(ini$nmis[order(ini$nmis)] / nrow(baseline_only) * 100) %>% round(1)
 ```
 
-## Create next closet non-missing value variables
+* Lots of missing (8.5% to 99.1%) for: canc_f, packyrs, cvd_f, hypt_f, hip55_f, arthrit_f, hyst_f, bmi, bmi4cat_f, ssri_f, diab_f, diab_combined_f, and hormnw_f
 
-For BMI, SSRI, chronic disease, caffeine, and hormone now, create a second variable that contains the value at the next non-missing observation. I also, need to create a variable that captures the difference in days between observations.
 
-After capturing the longitudinal information in the new variables, I will subset baseline again and perform multiple imputation.
 
-Finally, the newly created variables will be dropped from the data before analysis.
 
-To find the closest measure to baseline, we need to calculate the absolute difference in days between baseline and the day each measure occurred.
 
-```{r create_diff_days}
-dt[baseline == 1, baseline_days := days]
-dt[, baseline_days := na.omit(baseline_days)[1], by = id]
-dt[, diff_days := abs(days - baseline_days)]
-```
+-------------------------------------------------------------------------------
 
-```{r create_longitudinal_impute_values}
-# Select variables
-imp_vars <- select(dt, bmi, ssri_f, chronic_disease_f, f60caff, hormnw_f) %>% names()
+# Adjust multiple imputation settings
 
-# Get next closest missing values
-dt <- get_imp_value(df = dt, imp_vars = imp_vars)
+-------------------------------------------------------------------------------
 
-# Check results
-# select(dt2, id, days, baseline, diff_days, chronic_disease_f, chronic_disease_f_2, chronic_disease_f_days)
-check_data(dt) # 743,094 observations and 46 variables
-```
-
-## Subset baseline observations only
-
-```{r}
-dt <- dt[baseline == 1]
-check_data(dt) # 83,145 observations and 46 variables
-```
-
-```{r}
-# Clean up
-rm(imp_vars)
-dt[, c("baseline", "baseline_days", "diff_days") := NULL]
-check_data(dt) # 83,145 observations and 43 variables
-```
-
-## View prop observed and influx / outflux
-
-* pobs = proportion observed   
-* influx = ranges from 0 to 1. For two variables with the same proportion of missing data, the variable with higher influx is better connected to the observed data, and might thus be easier to impute.   
-* outflux = ranges from 0 to 1. For two variables with the same proportion of missing data, the variable with higher outflux is better connected to the missing data, and thus potentially more useful for imputing other variables.
-
-```{r influx_outflux}
-fluxplot(dt)
-```
-&nbsp;
-
-We should also scrutinize the variables at the other end. Variables with high proportions of missing data generally create more problems than they solve. Unless some of these variables are of genuine interest to the investigator, it is best to leave them out. Virtually every dataset contains some parts that could better be removed before imputation. This includes, but is not limited to, uninteresting variables with a high proportion of missing data, variables without a code for the missing data, administrative variables, constant variables, duplicated, recoded or standardized variables, and aggregates and indices of other information.
-
-van Buuren, Stef (2012-05-14). Flexible Imputation of Missing Data (Chapman & Hall/CRC Interdisciplinary Statistics) (Page 175). Taylor and Francis CRC ebook account. Kindle Edition. 
-
-## Adjust multiple imputation settings
-
-### View logged events
+## View logged events
 
 ```{r logged_events}
-ini <- mice(dt, m = 0, maxit = 0) # Dry run to view information about the imputation process
+ini <- mice(baseline_only, m = 0, maxit = 0) # Dry run to view information about the imputation process
 ini$loggedEvents
 ```
-&nbsp;
 
-Makes sense. Everyone included in the data at this point said yes to sexactiv_f. What is chronic_disease_f colinear with?
-
-```{r}
-dt %>% 
-  mutate(
-    chronic_disease_f   = if_else(is.na(chronic_disease_f), 9, as.numeric(chronic_disease_f)),
-    chronic_disease_f_2 = if_else(is.na(chronic_disease_f_2), 9, as.numeric(chronic_disease_f_2))
-  ) %>% 
-  summarise(
-    `Count Same` = sum(chronic_disease_f == chronic_disease_f_2),
-    `Count Diff` = sum(chronic_disease_f != chronic_disease_f_2)
-  )
-```
-
-View the current imputation process information
+Need to drop the baseline variable
 
 ```{r}
-ini
+baseline_only <- baseline_only %>% select(-baseline)
+about_data(baseline_only) # 83,329 observations and 52 variables
 ```
-&nbsp;
 
-### Adjust prediction matrix   
+Check again
 
-* Make sure administrative variables are being used for imputation (e.g. id, ctos)      
-* Make sure var_days variables aren't imputing anything other than their specific var. For example, bmi_days should only be used to impute bmi, not marital status.     
-* Adjust any other variables that appear to be noise.   
+```{r}
+ini <- mice(baseline_only, m = 0, maxit = 0)
+ini$loggedEvents
+```
+
+order data by missingness to speed up imputations
+
+```{r}
+order <- ini$nmis
+order <- sort(order)
+order <- names(order)
+baseline_only <- baseline_only %>% select(order)
+```
+
+
+
+
+## Adjust prediction matrix   
+
+* Copy the predictor matrix to a new object   
+* Easiest to view the pred matrix in data viewer    
+
+```{r}
+ini <- mice(baseline_only, m = 0, maxit = 0)
+pred <- ini$predictorMatrix 
+```
 
 The _rows_ of the predictor matrix correspond to the variables being predicted (or not). The _columns_ of the predictor matrix correspond to the variables being used to predict.
 
-```{r prediction_matrix}
-# Copy the predictor matrix to a new object
-pred <- ini$predictorMatrix 
+* All completely observed vars (e.g., age) are not predicted by default (i.e., row of 0's)
 
-# Set cells of the matrix to 0 or 1 as needed, using index [r, c] notation
-# All completely observed vars (e.g., age) are not predicted by default (i.e., row of 0's)
-pred[, c("id", "age_group_f", "ctos_f")] <- 0 # Don't use these to impute anything
+* Make sure administrative variables are not being used for imputation (e.g. id, ctos)   
 
-# Adjust imputation for var_days (see description above)
-pred[, c("bmi_days", "ssri_f_days", "chronic_disease_f_days", "f60caff_days", "hormnw_f_days")] <- 0
-pred["bmi", "bmi_days"]                             <- 1
-pred["ssri_f", "ssri_f_days"]                       <- 1
-# pred["chronic_disease_f", "chronic_disease_f_days"] <- 1 # Removed for collinearity
-pred["f60caff", "f60caff_days"]                     <- 1
-pred["hormnw_f", "hormnw_f_days"]                   <- 1
+* Make sure var_days variables aren't imputing anything other than their specific var. For example, bmi_days should only be used to impute bmi, not marital status. __Update: we dropped var_days__
+
+* I don't think we want to impute the "_2" or "_days" variables. We are just using those to help predict baseline values for their respective vars. If the var (e.g. canc_f) is missing for every row within an observation, we still want to impute that value based on other variables (age, general health, etc.), but there isn't much to be gained by also imputing the "next closet value" for that variable.
+
+* Adjust any other variables that appear to be noise.   
+
+* Set cells of the matrix to 0 or 1 as needed, using index [r, c] notation
+
+### Don't use administrative variables to impute anything
+
+```{r}
+pred[, c("id", "days", "ctos_f")] <- 0
 ```
 
-### Adjust MI methods
+
+
+
+## Adjust MI methods
 
 * To prevent vars from being imputed, we need to set the method to missing in addition to adjusting the predictor matrix.   
-* In this case, everything looks good.   
 
 ```{r}
 meth <- ini$method
 meth
 ```
 
-## Generate the imputations
 
-```{r create_mi}
+
+
+-------------------------------------------------------------------------------
+
+# Generate the imputations
+
+-------------------------------------------------------------------------------
+
+```{r}
 start <- now()
 
-imp <- mice(data = dt,
-            m = 5,                      # Default - adding for explicitivity
+imp <- mice(data = baseline_only,
+            m = 10,                     # Default is 5
             method = meth,              # Custom method vector created above
             predictorMatrix = pred,     # Custom predictor matrix created above
             seed = 20170511)            # For reproducability
@@ -211,15 +159,120 @@ time <- difftime(stop, start)
 ```
 
 ```{r}
-time # MI took 3.36 hours to run
+time # MI took 2.598068 hours
 ```
 
-# Save the imputed data
+## Save Multiply imputed data set (MIDS) object from mice
 
 ```{r}
-write_rds(imp, path = "../data/imp.rds")
+imp_83329 <- imp
+write_rds(imp_83329, path = "../data/imp_83329.rds")
 ```
 
+# Stack the imputed datasets
+
+```{r}
+analysis_11 <- complete(imp_83329, action = "long", include = TRUE)
+```
+
+How many obs and vars in each imputation set?
+
+```{r}
+analysis_11 %>% 
+  filter(.imp == 1) %>% 
+  about_data() # 83,329 observations and 54 variables
+```
+
+Check for missing
+
+Overall:
+
+```{r}
+analysis_11 %>% 
+  map_df(~ sum(is.na(.))) %>% 
+  gather(key = variable, value = missing)
+```
+
+Because I used "include = TRUE" above, the stacked data includes a copy of the original data with missing. I needed to do this for the as.mids function below to work.
+
+Imputed data sets only:
+
+```{r}
+analysis_11 %>% 
+  filter(!.imp == 0) %>% 
+  map_df(~ sum(is.na(.))) %>% 
+  gather(key = variable, value = missing)
+```
+
+No missing values remain in the imputed datasets.
+
+## Put dichotomous abuse variable back in the data
+
+I also want to make a numeric version of satisfied and freq satisfied for modeling.
+
+I also want to create dissatisfied variables that will be used for modeling.
+
+Need to change the order of factor levels for abuse4cat_f. Currently: "Physical and verbal abuse" "Physical abuse only" "Verbal abuse only" "Did not experience abuse"
+
+```{r}
+analysis_11 <- analysis_11 %>% 
+  mutate(
+    abuse = case_when(
+      abuse4cat_f == "Did not experience abuse" ~ 0,
+      abuse4cat_f == "Verbal abuse only" ~ 1,
+      abuse4cat_f == "Physical abuse only" ~ 1,
+      abuse4cat_f == "Physical and verbal abuse" ~ 1
+    ),
+    satisfied = if_else(satisfied_f == "Yes", 1L, 0L, NA_integer_),
+    freq_satisfied = if_else(freq_satisfied_f == "Yes", 1L, 0L, NA_integer_),
+    dissatisfied = if_else(satisfied ==1, 0L, 1L, NA_integer_),
+    freq_dissatisfied = if_else(freq_satisfied == 1, 0L, 1L, NA_integer_),
+    
+    abuse4cat_f = forcats::fct_relevel(abuse4cat_f, "Did not experience abuse", "Verbal abuse only",
+                                       "Physical abuse only", "Physical and verbal abuse")
+  )
+```
+
+Convert analysis_11 back to a mids object that can be used for modeling: https://cran.r-project.org/web/packages/mice/mice.pdf
+
+```{r}
+mids_83329 <- as.mids(analysis_11)
+```
+
+## Save new mids object
+
+```{r}
+write_rds(mids_83329, "../data/mids_83329.rds")
+```
+
+## Save stacked data in feather format
+
+```{r}
+write_feather(analysis_11, "../data/analysis_11.feather")
+```
+
+## Export to excel for SAS
+
+```{r}
+readr::write_csv(analysis_11, "../data/analysis_11.csv") # Too large to open in Excel.
+```
+
+Ideally:
+
+* Need to run descriptives in SAS. Proc Freq, etc.
+
+* See if I can replicate in R. 
+
+* If not, post on SO.
+
+* Run models in SAS MIanalyze. RR models vs. OR models.
+
+* See if I can replicate in R.
+
+In reality, we kind of just need to get this done. I think they will want OR models even if OR models are technically correct. For now, just give them table 2. We can always come back and revisit this if we need to.
+
+-------------------------------------------------------------------------------
+
 ```{r session_info, echo=FALSE}
-sessionInfo()
+# sessionInfo()
 ```

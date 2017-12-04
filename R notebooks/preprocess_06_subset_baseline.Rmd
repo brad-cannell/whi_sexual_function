@@ -10,9 +10,8 @@ output:
 library(feather)
 library(tidyverse)
 library(data.table)
-
-# Load functions
-source("../R scripts/functions.R")
+library(bfuncs)
+library(mice)
 ```
 
 * Primary exposure of interest:     
@@ -57,7 +56,7 @@ Currently, all 161,808 women are still represented in the data.
 ```{r load_analysis_09}
 # Load data
 analysis_09 <- read_feather("../data/analysis_09.feather")
-check_data(analysis_09) # 1,432,448 observations and 134 variables
+about_data(analysis_09) # 1,432,448 observations and 134 variables
 ```
 
 ```{r}
@@ -83,8 +82,9 @@ dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_sat
              packyrs, bmi, bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, 
              diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, first_nightswt, 
              hot_flashes_f, night_sweats_f, vag_dry_f, hormnw_f, sex, baseline)]
-check_data(dt) # 1,432,448 observations and 38 variables
+about_data(dt) # 1,432,448 observations and 38 variables
 ```
+
 
 
 
@@ -105,11 +105,18 @@ Sexual activity in the past year is not being used for modeling. Rather, we will
 > The main message is that we cannot evaluate imputation methods by their ability to re-create the true data, or by their ability to optimize classification accuracy. Imputation is not prediction.
 van Buuren, Stef (2012-05-14). Flexible Imputation of Missing Data (Chapman & Hall/CRC Interdisciplinary Statistics) (Page 46). Taylor and Francis CRC ebook account. Kindle Edition. 
 
+Another approach would be to impute all cases of missing sexual activity and then drop from each imputed dataset. However, that would lead to imbalanced numbers of observations within each imputed dataset. 
+
+Decided to just use listwise deletion for sexual activity.
+
+How many are missing sexual activity at baseline?
+
 ```{r sexactive_freq}
-# What is the frequency distribution for sexually active at baseline?
 dt[baseline == 1][order(sexactiv_f)][, .(Women = .N), by = sexactiv_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 ```
+
+About 4% missing sexual activity at baselie, and another 71,239 reported no sexual activity.
 
 ```{r}
 71239 + 7167 # 78,406 women have no or NA for sexactive_f at baseline.
@@ -152,7 +159,7 @@ count_ids(dt$id) # 83,329 unique women
 ```
 
 ```{r}
-check_data(dt) # 744,745 observations and 39 variables
+about_data(dt) # 744,745 observations and 39 variables
 ```
 
 ```{r}
@@ -160,9 +167,189 @@ check_data(dt) # 744,745 observations and 39 variables
 rm(keep_ids, drop_ids)
 ```
 
+At this point, the data contains 744,745 observations for 83,329 unique women. 78,406 women were removed from the analysis because they either reported no sexual activity in the previous 12 months, or because they were missing a value for sexual activity in the past 12 months (~4%).
 
 
 
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Missing abuse and sexual satisfaction
+
+-------------------------------------------------------------------------------
+
+Originally, I dropped women with missing abuse and missing sexual function. Now, we will use MICE to impute values for abuse and sexual function instead.
+
+For abuse, we will impute the 4-level abuse variable, and then recode to the 2-level abuse variable again within each imputed dataset.
+
+## How many women are missing 4-level abuse at baseline?
+
+```{r abuse4cat_freq}
+dt[baseline == 1][order(abuse4cat_f)][, .(Women = .N), by = abuse4cat_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+Of the 83,329 women that reported sexual activity in the past year, 2 never answered either abuse question and 182 women's abuse status could not be determined from their answers. The abuse status (4-level) can be determined for over 99% of the 83,329 women who reported sexual activity in the past year.
+
+## How many women are missing sexual satisfaction at baseline?
+
+```{r satisfied_freq}
+dt[baseline == 1][order(satisfied_f)][, .(Women = .N), by = satisfied_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+## How many women are missing sexual frequency satisfaction at baseline?
+
+```{r freq_satisfied_freq}
+dt[baseline == 1][order(freq_satisfied_f)][, .(Women = .N), by = freq_satisfied_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
+```
+
+Only 4% of women are missing sexual satisfaction at baseline, and only 5% of women are missing sexual frequency satisfaction at baseline. At some point, we may want to come back and impute sexual satisfaction and sexual frequency satisfaction longitudinally. For now, we will impute them from other variables in the data set.
+
+## How many women are missing sexual satisfaction OR sexual frequency satisfaction at baseline?
+
+```{r}
+dt[baseline == 1, 
+   .(missing_sexual = if_else(is.na(satisfied_f) | is.na(freq_satisfied_f), 1, 0))][,
+     .(count = .N), by = missing_sexual][, cumsum := cumsum(count)][,
+       percent := count / max(cumsum) * 100][]
+```
+
+So, 4,758 women (~6%) who were sexually active in the past year were missing a baseline response to the question about sexual satisfaction OR they were missing a baseline response to the question about sexual frequency satisfaction.
+
+We will impute these missing values.
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# A little more data preparation
+
+-------------------------------------------------------------------------------
+
+Keep only variables of interest (for analysis or MI) in dt
+
+```{r}
+dt <- dt %>%
+  select(
+    # Administrative variables
+    # Calling CTOS administrative. There is no difference in satisfaction by CTOS
+    id, days, baseline, ctos_f,
+    
+    # Response variables
+    satisfied_f, freq_satisfied_f,
+    
+    # Abuse variables
+    # Since we are only using 4-level abuse in the MI models, go ahead and drop the 2-level abuse variable.
+    abuse4cat_f,
+    
+    # Sociodemographic covariates
+    age, race_eth_f, edu2cat_f, inc5cat_f, married_f,
+    
+    # Health and health risk factors
+    packyrs, bmi, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, canc_f, hip55_f, good_health_f,
+    pshtdep, ssri_f, 
+    
+    # Menopausal symptoms and treatment variables
+    night_sweats_f, hot_flashes_f, vag_dry_f, hormnw_f
+  )
+
+about_data(dt) # 744,745 observations and 29 variables
+```
+
+## Subset baseline only
+
+Again, baseline is either each woman's first response to an abuse question or day 0 if she never responded to either abuse question.
+
+```{r}
+baseline_only <- dt[baseline == 1]
+about_data(baseline_only) # 83,329 observations and 29 variables
+```
+
+## Recode abuse4cat to NA
+
+I also, need to recode indicator values for different kinds of missing for abuse4cat_f to NA
+
+```{r}
+baseline_only$abuse4cat_f <- recode_factor(
+  baseline_only$abuse4cat_f, 
+  "Can't determine V no P" = NA_character_,
+  "Can't determine P no V" = NA_character_,
+  "Abuse not measured" = NA_character_
+)
+```
+
+## Create imputation flags
+
+```{r}
+ini <- mice(baseline_only, m = 0, maxit = 0)
+
+# For imputation flags, only need vars with any missing data.
+vars_w_missing <- ini$nmis[ini$nmis > 0]
+vars_w_missing <- names(vars_w_missing)
+
+vars_w_missing
+```
+
+For each member of vars_w_missing create a impute_ flag variable
+
+```{r}
+for (var in vars_w_missing) {
+  var_name <- paste0("impute_", var)
+  baseline_only[[var_name]] <- if_else(is.na(baseline_only[[var]]), 1, 0)
+}
+
+# names(baseline_only)
+# baseline_only %>% select(id, diab_f, impute_diab_f)
+about_data(baseline_only) # 83,329 observations and 53 variables
+```
+
+Clean up
+
+```{r}
+rm(analysis_09, dt, ini, var, var_name, vars_w_missing)
+```
+
+## Save baseline_only as feather
+
+For multiple imputation
+
+```{r}
+write_feather(baseline_only, "../data/baseline_only.feather")
+```
+
+## Export as csv for MI in SAS
+
+```{r}
+writexl::write_xlsx(baseline_only, "../data/baseline_only.xlsx")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Old below here. Don't delete quite yet...
 
 
 

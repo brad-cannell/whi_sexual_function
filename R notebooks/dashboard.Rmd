@@ -15,6 +15,7 @@ library(feather)
 ```
 
 ```{r load_data}
+analysis_11 <- read_feather("../data/analysis_11.feather") # Stacked imputed data - don't use.
 baseline_only <- read_feather(path = "../data/baseline_only.feather")
 no_abuse <- read_feather(path = "../data/no_abuse.feather")
 any_abuse <- read_feather(path = "../data/any_abuse.feather")
@@ -23,6 +24,13 @@ physical_only <- read_feather(path = "../data/physical_only.feather")
 verbal_and_physical <- read_feather(path = "../data/verbal_and_physical.feather")
 table_01_n <- nrow(baseline_only) %>% format(big.mark = ",")
 ```
+
+```{r}
+# A little bit of data management
+# Since we are only using 4-level abuse in the MI models, we dropped the 2-level abuse variable.
+# Not a problem, just recode from 
+```
+
 
 Sidebar {.sidebar data-width=300}
 ===============================================================================

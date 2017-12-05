@@ -108,20 +108,10 @@ Row 2
 ```{r}
 baseline_only %>% 
   group_by(abuse_d_f, satisfied_f) %>% 
-  count() %>% 
-  mutate(
-    cumsum  = cumsum(n),
-    N = max(cumsum),
-    prop = n / N,
-    percent = round((prop * 100), 1),
-    se_of_prop = sqrt(prop * (1-prop)/(N-1)),
-    tstat = Vectorize(qt, "df")(0.975, N-1),
-    lower = (prop - tstat * se_of_prop) * 100,
-    upper = (prop + tstat * se_of_prop) * 100
-  ) %>% 
-  ggplot(data = ., aes(x = satisfied_f, y = percent)) +
+  freq_table() %>% 
+  ggplot(data = ., aes(x = satisfied_f, y = percent_row)) +
     geom_point(aes(color = abuse_d_f), stat = "identity", size = 3, alpha = 0.7) +
-    geom_label_repel(aes(label = percent, color = abuse_d_f), nudge_x = 0.25, show.legend = FALSE) +
+    geom_label_repel(aes(label = percent_row, color = abuse_d_f), nudge_x = 0.25, show.legend = FALSE) +
     scale_x_discrete("Satisfied with Current Sexual Activities") +
     scale_y_continuous("Percent", limits = c(0, 100)) +
     scale_color_manual(values = c("#63A2E7", "#CC0000"), name = "Abuse at Baseline") +

@@ -1,0 +1,377 @@
+---
+title: "Figures"
+date: 'Created: 2017-12-04 <br> Updated: `r Sys.Date()`'
+output:
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+Sys.setenv(TZ = "US/Central")
+```
+
+```{r load_packages, message=FALSE, echo=FALSE}
+# Load packages
+library(tidyverse)
+library(feather)
+library(bfuncs)
+library(ggrepel)
+```
+
+```{r echo=FALSE}
+analysis_10 <- read_feather("../data/analysis_10.feather") 
+# analysis_10 is created at the very end of preprocess_06_subset_baseline
+```
+
+```{r echo=FALSE, eval=FALSE}
+about_data(analysis_10) # 743,094 observations and 39 variables
+```
+
+```{r echo=FALSE}
+baseline_only <- analysis_10 %>% filter(baseline == TRUE)
+
+no_abuse  <- baseline_only %>% filter(abuse_d_f == "No")
+any_abuse <- baseline_only %>% filter(abuse_d_f == "Yes")
+
+verbal_only         <- baseline_only %>% filter(abuse4cat_f == "Verbal abuse only")
+physical_only       <- baseline_only %>% filter(abuse4cat_f == "Physical abuse only")
+verbal_and_physical <- baseline_only %>% filter(abuse4cat_f == "Physical and verbal abuse")
+```
+
+# Sexual Satisfaction by Reported Abuse at Baseline
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse_d_f, satisfied_f) %>% 
+  freq_table() %>% 
+  
+  ggplot(data = ., aes(x = satisfied_f, y = percent_row)) +
+    geom_point(aes(color = abuse_d_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent_row, color = abuse_d_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#63A2E7", "#CC0000"), name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse_d_f, satisfied_f) %>% 
+  bfuncs::freq_table() %>% 
+  filter(satisfied_f == "Yes") %>% 
+  rename(Abuse = abuse_d_f) %>% 
+  
+  ggplot(data = ., aes(x = satisfied_f, y = percent_row, group = Abuse)) +
+    geom_bar(stat = "identity", width = 0.5, fill = "gray50") +
+    facet_grid(. ~ Abuse, labeller = label_both) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_classic() +
+    theme(
+      strip.background = element_rect(colour = "white"),
+      panel.spacing = unit(0, "lines")
+    )
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Sexual Satisfaction by Reported Abuse (4-Category) at Baseline
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse4cat_f, satisfied_f) %>% 
+  freq_table() %>% 
+  
+  ggplot(data = ., aes(x = satisfied_f, y = percent_row)) +
+    geom_point(aes(color = abuse4cat_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent_row, color = abuse4cat_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#CC0000", "#F46D33", "#EDC33B", "#63A2E7"), 
+                       name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse4cat_f, satisfied_f) %>% 
+  bfuncs::freq_table() %>% 
+  filter(satisfied_f == "Yes") %>% 
+  rename(Abuse = abuse4cat_f) %>% 
+  
+  ggplot(data = ., aes(x = satisfied_f, y = percent_row, fill = Abuse)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 1), width = 0.75) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_fill_manual(values = c("gray40", "gray60", "gray80", "black"), 
+                       name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_classic()
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Sexual Frequency Satisfaction by Reported Abuse at Baseline
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse_d_f, freq_satisfied_f) %>% 
+  freq_table() %>% 
+  
+  ggplot(data = ., aes(x = freq_satisfied_f, y = percent_row)) +
+    geom_point(aes(color = abuse_d_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent_row, color = abuse_d_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#63A2E7", "#CC0000"), name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse_d_f, freq_satisfied_f) %>% 
+  bfuncs::freq_table() %>% 
+  filter(freq_satisfied_f == "Yes") %>% 
+  rename(Abuse = abuse_d_f) %>% 
+  
+  ggplot(data = ., aes(x = freq_satisfied_f, y = percent_row, group = Abuse)) +
+    geom_bar(stat = "identity", width = 0.5, fill = "gray50") +
+    facet_grid(. ~ Abuse, labeller = label_both) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_classic() +
+    theme(
+      strip.background = element_rect(colour = "white"),
+      panel.spacing = unit(0, "lines")
+    )
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Sexual Frequency Satisfaction by Reported Abuse (4-Category) at Baseline
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse4cat_f, freq_satisfied_f) %>% 
+  freq_table() %>% 
+  
+  ggplot(data = ., aes(x = freq_satisfied_f, y = percent_row)) +
+    geom_point(aes(color = abuse4cat_f), stat = "identity", size = 3, alpha = 0.7) +
+    geom_label_repel(aes(label = percent_row, color = abuse4cat_f), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#CC0000", "#F46D33", "#EDC33B", "#63A2E7"), 
+                       name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse4cat_f, freq_satisfied_f) %>% 
+  bfuncs::freq_table() %>% 
+  filter(freq_satisfied_f == "Yes") %>% 
+  rename(Abuse = abuse4cat_f) %>% 
+  
+  ggplot(data = ., aes(x = freq_satisfied_f, y = percent_row, fill = Abuse)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 1), width = 0.75) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_fill_manual(values = c("gray40", "gray60", "gray80", "black"), 
+                       name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_classic()
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Percent, and 95% confidence interval, of Women Who Reported Abuse at Baseline by Age Group
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(age_group_f, abuse_d_f) %>% 
+  freq_table()%>%
+  filter(abuse_d_f == "Yes") %>% 
+  
+  ggplot(data = ., aes(x = age_group_f, y = percent_row)) +
+    geom_point(color = "blue", stat = "identity", size = 3) +
+    geom_errorbar(aes(x = age_group_f, ymin = lcl_row, ymax = ucl_row), width = 0.15) +
+    geom_label_repel(aes(label = percent_row), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 25)) +
+    ggtitle("Any Abuse at Baseline by Age Group") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(age_group_f, abuse_d_f) %>% 
+  freq_table()%>%
+  filter(abuse_d_f == "Yes") %>% 
+  
+  ggplot(data = ., aes(x = age_group_f, y = percent_row)) +
+    geom_bar(stat = "identity", fill = "gray50") +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 25)) +
+    ggtitle("Any Abuse at Baseline by Age Group") +
+    theme_classic()
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Percent, and 95% confidence interval, of Women Who Reported Sexual Satisfaction at Baseline by Age Group
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  filter(!is.na(satisfied_f)) %>% 
+  group_by(age_group_f, satisfied_f) %>% 
+  freq_table()%>%
+  filter(satisfied_f == "Yes") %>% 
+  
+  ggplot(data = ., aes(x = age_group_f, y = percent_row)) +
+    geom_point(color = "blue", stat = "identity", size = 3) +
+    geom_errorbar(aes(x = age_group_f, ymin = lcl_row, ymax = ucl_row), width = 0.15) +
+    geom_label_repel(aes(label = percent_row), nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    ggtitle("Sexual Satisfaction at Baseline by Age Group") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  filter(!is.na(satisfied_f)) %>%
+  group_by(age_group_f, satisfied_f) %>% 
+  freq_table()%>%
+  filter(satisfied_f == "Yes") %>% 
+  
+  ggplot(data = ., aes(x = age_group_f, y = percent_row)) +
+    geom_bar(stat = "identity", fill = "gray50") +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    ggtitle("Sexual Satisfaction at Baseline by Age Group") +
+    theme_classic()
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Percent, and 95% confidence interval, of Women Who Reported Sexual Frequency Satisfaction at Baseline by Age Group
+
+## Original figure
+
+```{r echo=FALSE}
+baseline_only %>% 
+  filter(!is.na(satfrqsx_f)) %>% 
+  group_by(age_group_f, satfrqsx_f) %>% 
+  freq_table() %>%
+  
+  ggplot(data = ., aes(x = age_group_f, y = percent_row)) +
+    geom_point(aes(color = satfrqsx_f), stat = "identity", size = 3) +
+    geom_errorbar(aes(x = age_group_f, ymin = lcl_row, ymax = ucl_row, color = satfrqsx_f), 
+                  width = 0.15) +
+    geom_label_repel(aes(label = percent_row, color = satfrqsx_f), 
+                     nudge_x = 0.25, show.legend = FALSE) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_color_manual(values = c("#EDC33B", "#F46D33", "#CC0000"), name = "Sexual Freq Satisfaction") +
+    theme_bw()
+```
+
+## As a bar chart
+
+```{r echo=FALSE}
+baseline_only %>% 
+  filter(!is.na(satfrqsx_f)) %>% 
+  group_by(age_group_f, satfrqsx_f) %>% 
+  freq_table() %>%
+  
+  ggplot(data = ., aes(x = age_group_f, y = percent_row, fill = satfrqsx_f)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 1), width = 0.75) +
+    scale_x_discrete("Age Group at Baseline") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_fill_manual(values = c("gray40", "gray60", "gray80"), 
+                       name = "Desire for Sexual Frequency") +
+    ggtitle("Sexual Frequency Satisfaction by Age at Baseline") +
+    theme_classic()
+```
+
+
+

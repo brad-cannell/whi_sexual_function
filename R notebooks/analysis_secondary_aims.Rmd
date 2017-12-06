@@ -1,0 +1,58 @@
+---
+title: "Secondary Aims"
+output:
+  word_document:
+    reference_docx: word_style_template_01.docx
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+Sys.setenv(TZ = "US/Central")
+```
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(feather)
+library(bfuncs)
+```
+
+```{r echo=FALSE}
+analysis_10 <- read_feather("../data/analysis_10.feather") 
+# analysis_10 is created at the very end of preprocess_06_subset_baseline
+```
+
+```{r echo=FALSE, eval=FALSE}
+about_data(analysis_10) # 743,094 observations and 39 variables
+```
+
+```{r echo=FALSE}
+baseline_only <- analysis_10 %>% filter(baseline == TRUE)
+```
+
+Compare observed levels of sexual satisfaction at baseline by exposure to recent VA/PA (Subsidiary Aim).  Frequency statistics were conducted to derive the cross-sectional proportions of women who were globally sexually dissatisfied, as well as those who were dissatisfied with sexual frequency, by recent VA/PA exposure (any vs. none) and age group.  Additional frequency statistics were conducted to characterize sexual dissatisfaction (Global/Frequency) by recent VA/PA exposure type (recent VA only, recent PA only, and recent VA and PA).  A chi-square test was conducted to evaluate the conditional (on age group or depression) independence of recent VA/PA exposure and sexual dissatisfaction (Global/Frequency) (36). 
+
+```{r echo=FALSE}
+baseline_only %>% 
+  group_by(abuse4cat_f, satisfied_f) %>% 
+  bfuncs::freq_table() %>% 
+  filter(satisfied_f == "Yes") %>% 
+  rename(Abuse = abuse4cat_f) %>% 
+  
+  ggplot(data = ., aes(x = satisfied_f, y = percent_row, fill = Abuse)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 1), width = 0.75) +
+    scale_x_discrete("Satisfied with Current Sexual Activities") +
+    scale_y_continuous("Percent", limits = c(0, 100)) +
+    scale_fill_manual(values = c("gray40", "gray60", "gray80", "black"), 
+                       name = "Abuse at Baseline") +
+    ggtitle("Sexual Satisfaction by Reported Abuse at Baseline") +
+    theme_classic()
+```
+
+```{r}
+baseline_only %>% 
+  group_by(abuse4cat_f, satisfied_f) %>% 
+  bfuncs::freq_table()
+```
+
+# Left off here. Adding chi-square functionality to bfuncs.

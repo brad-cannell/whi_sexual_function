@@ -56,3 +56,12 @@ baseline_only %>%
 ```
 
 # Left off here. Adding chi-square functionality to bfuncs.
+
+
+
+
+
+
+
+
+

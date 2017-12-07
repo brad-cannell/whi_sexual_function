@@ -134,6 +134,31 @@ unadj_dissat_pool <- pool(unadj_dissat)
 unadj_dissat_pool %>% tidy_output()
 ```
 
+## Check for age group interaction
+
+```{r}
+analysis_10 <- read_feather("../data/analysis_10.feather")
+baseline_only <- analysis_10 %>% filter(baseline == TRUE)
+```
+
+```{r}
+interaction <- glm(
+  satisfied_f ~ abuse_d_f + age + abuse_d_f:age,
+  family = binomial(link = "logit"),
+  data = analysis_10
+)
+
+interaction %>% summary()
+confint(interaction) %>% exp
+exp(interaction$coefficients)
+```
+
+
+```{r}
+interaction <- pool(interaction)
+interaction %>% tidy_output()
+```
+
 ## Adjusted model 1 dissatisfaction
 
 * Age   

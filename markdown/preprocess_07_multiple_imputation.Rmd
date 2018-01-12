@@ -26,7 +26,7 @@ library(bfuncs)
 ```{r load_baseline_only}
 # Load data
 baseline_only <- read_feather("../data/baseline_only.feather")
-about_data(baseline_only) # 83,145 observations and 53 variables
+about_data(baseline_only) # 83,329 observations and 53 variables
 ```
 
 ```{r}

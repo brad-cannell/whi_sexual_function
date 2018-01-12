@@ -178,21 +178,218 @@ $(document).ready(function () {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBMb2FkIHBhY2thZ2VzXG5saWJyYXJ5KHRpZHl2ZXJzZSlcbmBgYCJ9 -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBMb2FkIHBhY2thZ2VzXG5saWJyYXJ5KHRpZHl2ZXJzZSlcbmxpYnJhcnkoZmVhdGhlcilcbmxpYnJhcnkoYmZ1bmNzKVxuYGBgIn0= -->
 <pre class="r"><code># Load packages
-library(tidyverse)</code></pre>
+library(tidyverse)
+library(feather)
+library(bfuncs)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p><strong>May want to put this into DiagrammR at some point.</strong></p>
+<div id="load-data-and-subset-baseline" class="section level1">
+<h1>Load data and subset baseline</h1>
+<p>Baseline is either each woman’s first response to an abuse question or day 0 if she never responded to either abuse question.</p>
+<ul>
+<li>analysis_09 was created in preprocess_05_covariates.Rmd.</li>
+</ul>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYW5hbHlzaXNfMDkgPC0gcmVhZF9mZWF0aGVyKFwiLi4vZGF0YS9hbmFseXNpc18wOS5mZWF0aGVyXCIpXG5hYm91dF9kYXRhKGFuYWx5c2lzXzA5KVxuYGBgIn0= -->
+<pre class="r"><code>analysis_09 &lt;- read_feather(&quot;../data/analysis_09.feather&quot;)
+about_data(analysis_09)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiMSw0MzIsNDQ4IG9ic2VydmF0aW9ucyBhbmQgMTM0IHZhcmlhYmxlc1wiXG4ifQ== -->
+<pre><code>[1] &quot;1,432,448 observations and 134 variables&quot;</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYmFzZWxpbmUgPC0gYW5hbHlzaXNfMDkgJT4lIFxuICBtdXRhdGUoXG4gICAgYmFzZWxpbmUgPSBjYXNlX3doZW4oXG4gICAgICBmaXJzdF9hYl9vYnMgPT0gVFJVRSB+IFRSVUUsXG4gICAgICBhYnVzZV9ldmVyID09IC0zICYgZGF5cyA9PSAwIH4gVFJVRVxuICAgIClcbiAgKSAlPiUgXG4gIGZpbHRlcihiYXNlbGluZSlcbmFib3V0X2RhdGEoYmFzZWxpbmUpXG5gYGAifQ== -->
+<pre class="r"><code>baseline &lt;- analysis_09 %&gt;% 
+  mutate(
+    baseline = case_when(
+      first_ab_obs == TRUE ~ TRUE,
+      abuse_ever == -3 &amp; days == 0 ~ TRUE
+    )
+  ) %&gt;% 
+  filter(baseline)
+about_data(baseline)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiMTYxLDgwOCBvYnNlcnZhdGlvbnMgYW5kIDEzNSB2YXJpYWJsZXNcIlxuIn0= -->
+<pre><code>[1] &quot;161,808 observations and 135 variables&quot;</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<hr />
+</div>
+<div id="started-with-161808-women.-what-was-the-count-by-ctos" class="section level1">
+<h1>Started with 161,808 women. What was the count by ct/os?</h1>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYmFzZWxpbmUgJT4lIFxuICBncm91cF9ieShjdG9zX2YpICU+JSBcbiAgZnJlcV90YWJsZSgpXG5gYGAifQ== -->
+<pre class="r"><code>baseline %&gt;% 
+  group_by(ctos_f) %&gt;% 
+  freq_table()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImZyZXFfdGFibGVfb25lX3dheSIsInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibmNvbCI6NywibnJvdyI6Mn0sInJkZiI6Ikg0c0lBQUFBQUFBQUExMVJQVS9ETUJCMTRyUlJMYlZVZ3BtSmdZRkdBbWFrU0JTeEZDRVZoZzVJbFhGZHFFanM0cVFGTWJFdzh5UFltWm1aWVdKZ1pnWUpNYkFtT0VrdnBiWmsrOTNkODMwOGQ5dTlMZElqQ0NFYllRY2pHMnZvMlBxd2tJTnEyWDJORUY3V3dOVzdtUk9MUUpYRk11b1BEUXZoZXM3SkV1VDNRckpxd0tjOGlJeE05dTR4b01NajQwV0ZCVFNDQjJXYUlkWGxsRWFKM2tWQmk2d2hLL3dxYmZ1Nm1XK0VHcG50N3pWV2JqNzJILzNPeitmZDZsTzM5TGUvVDlaL24rLzl6dHQydHViOGpSZTlYdjJENXNNNzJia3Myc0twMFFrWjBKaDZRMFZEYmpZdXRBOGFkMmRPUEtVS0lLTXhTQ3htd0JYOVdNWTBBSFBNRmVNQ2FEaGdFTUVURFJmcjFaUzg4cUJtTHNHdFB0STBUUXFaRnNpdUhNY2pLVFRWaHE5TmpNbXNURjR5KzBka0JKY21JaXMxYUxIemliaG9iUnJVK3Z6N1Mrd1dMVGlnSUVqaU1obUc4eUdyWEp5TkJBY1J1VklTRktzRTlKU0RBZzA5Ymo2dE4xYWo4alhSM3NqN3J5RmhNZ0JQTVdUeUIyWCtjVFQwQWdBQSJ9 -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["var"],"name":[1],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["n"],"name":[3],"type":["int"],"align":["right"]},{"label":["n_total"],"name":[4],"type":["int"],"align":["right"]},{"label":["percent"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lcl"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ucl"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"ctos_f","2":"CT","3":"68132","4":"161808","5":"42.11","6":"41.87","7":"42.35"},{"1":"ctos_f","2":"OS","3":"93676","4":"161808","5":"57.89","6":"57.65","7":"58.13"}],"options":{"columns":{"min":{},"max":[10],"total":[7]},"rows":{"min":[10],"max":[10],"total":[2]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<hr />
+</div>
+<div id="no-sexual-activity-exclusions" class="section level1">
+<h1>No sexual activity exclusions</h1>
+<p>There are two relevant questions here.</p>
+<ul>
+<li><p>From <a href="https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf">form 37</a> and <a href="https://www.whi.org/researchers/data/WhiDataDict/f38_ctos_fu_inv.pdf">form 38</a>: Did you have any sexual activity with a partner in the last year?</p></li>
+<li><p>From <a href="https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf">form 37</a>: Regardless of whether you are currently sexually active, which response best describes who you have had sex with over your adult lifetime?</p></li>
+</ul>
+<p>Remove women who say they haven’t had sex in the past year and women who say that they have never had sex. Additionally, I need to remove women who are missing this information. I can’t just impute a value because I am sub-setting (dropping women who were not sexually active in the past year) based on this variable, as opposed to modeling. Imputing will potentially give me different values for sexual activity in the past year within woman.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYmFzZWxpbmUgJT4lIFxuICBncm91cF9ieShzZXhhY3Rpdl9mLCBzZXgpICU+JSBcbiAgZnJlcV90YWJsZSgpXG5gYGAifQ== -->
+<pre class="r"><code>baseline %&gt;% 
+  group_by(sexactiv_f, sex) %&gt;% 
+  freq_table()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImZyZXFfdGFibGVfdHdvX3dheSIsInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibmNvbCI6MTAsIm5yb3ciOjE4fSwicmRmIjoiSDRzSUFBQUFBQUFBQSsxVlRXZ1RRUlNlN0tadHN0SWFhdkNnMEVwUGVtalZlbEFvWWVhZ0JDOUNjd2dSS21IZGJqUjB1eHMzMnhqcXdWNDhGMjllL2NHaklCWGFneUxXV3dTcEIrbE5ySHF5UlZPbG5xVHh6Y3liN1Nia0l1aEJjT0h0ZS9QbWUyL2VmRzkyTm5lMk1HNFVERUtJUnZTNFRqUWR6TGdHcnhpSmt5VFhkVUwwQTJCd1VBcGtFQ2VNcWwwM3JhQmNLNWIrZTM3YlEvUit3U1VudXJ0bzNXUUJYdDJrbzJtOWpsMnpuU3AyVEVPdmRzRkRTNzlvVnp0Q2VpekhyS3FJTUU4SjZ2VjhzSFk3dXEvRFh2NWxrNUFCdmh2YUZPUVJSbEFuVUtkUWowaDlVK0Q2N3YxdFBMendYQ1NXUVRjSStUa0VqZnNJaCtjNVZONEx2dk1ncjBoc29nWGpJc2hkYUJmSFRoRHhqYVl2Z1Q0RXpkMkV1RUtZTDNZdzIxM09OYm9LT2R6cUxwaFBxNmYraUdBZldOTElWTzZ2Ry9UTjVxMmhsY2t0bG45WTRnOXRnak5UZWNBR05yS1Awdk1iZEp1ak10Zm9NdUpmcjB6eUNGYWdVMGQzVmhkcGM1NERiOUR0MVVWd3ZLVHZkN2p4ZzM0VzhBeDlnZmx6eHlWK1hlWmhKMi96aVJ3Nzhremd3cm9TYVpHUXJtRy84bmZFZXZRcnh2WGpPazJlYmVvWWZTenowNGFzbHhYT3RPSFZmdWc3V1RmOWhQVStrWnBOYm9sRTRYb25sazd4aHcwVDljaTZES3pyN1JCUE5NenlTekl2N3B1bGNMMXZ1TTVUckUveFc4Z0tRTWpUZDhSL1dFUWVrYmMxNUQ5WEVZc3JQdGw0WGZJK0l1dVFsNG5PendmdnFiby9qR2t6TU1kS3ZqbHJkMTQzTHZqVWRXT2dzOC8zcmhkcnBoOGRXbWFnaHBiblJHZjVjRzgyNW9hWml4Q25RRzR4OEFMVHdlRytpdTFidGh0RUVZN2xSSWR6T0d3dk53bXVNVlV5L3dLMEJYaTFXcTB2Uk55TmJlQStyeEtVUFJlZ0d2OXhKc2plOVJuK1ZYMzV0WXFibm5STTdwOXorVkxUbzliVk9YZG05RFEyUGNiR3cwTVFEZTFIZXpCaUc3S2t1R3BJWW8rMDJWa2dRTjN2dG51bDdOcUtPZHYzUFVWdmoyTmV0aFZ2Qm15L09sYnh5MkhrQUhnRUgyMWVpWXN5YmtDWGxFZlNzUHNMNEhWN20zUUlBQUE9In0= -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["row_var"],"name":[1],"type":["chr"],"align":["left"]},{"label":["row_cat"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["col_var"],"name":[3],"type":["chr"],"align":["left"]},{"label":["col_cat"],"name":[4],"type":["dbl"],"align":["right"]},{"label":["n"],"name":[5],"type":["int"],"align":["right"]},{"label":["n_row"],"name":[6],"type":["int"],"align":["right"]},{"label":["n_total"],"name":[7],"type":["int"],"align":["right"]},{"label":["percent_row"],"name":[8],"type":["dbl"],"align":["right"]},{"label":["lcl_row"],"name":[9],"type":["dbl"],"align":["right"]},{"label":["ucl_row"],"name":[10],"type":["dbl"],"align":["right"]}],"data":[{"1":"sexactiv_f","2":"No","3":"sex","4":"1","5":"2231","6":"71239","7":"161808","8":"3.13","9":"3.01","10":"3.26"},{"1":"sexactiv_f","2":"No","3":"sex","4":"2","5":"202","6":"71239","7":"161808","8":"0.28","9":"0.25","10":"0.33"},{"1":"sexactiv_f","2":"No","3":"sex","4":"3","5":"64542","6":"71239","7":"161808","8":"90.60","9":"90.38","10":"90.81"},{"1":"sexactiv_f","2":"No","3":"sex","4":"4","5":"739","6":"71239","7":"161808","8":"1.04","9":"0.97","10":"1.11"},{"1":"sexactiv_f","2":"No","3":"sex","4":"9","5":"2751","6":"71239","7":"161808","8":"3.86","9":"3.72","10":"4.01"},{"1":"sexactiv_f","2":"No","3":"sex","4":"NA","5":"774","6":"71239","7":"161808","8":"1.09","9":"1.01","10":"1.17"},{"1":"sexactiv_f","2":"Yes","3":"sex","4":"1","5":"73","6":"83402","7":"161808","8":"0.09","9":"0.07","10":"0.11"},{"1":"sexactiv_f","2":"Yes","3":"sex","4":"2","5":"203","6":"83402","7":"161808","8":"0.24","9":"0.21","10":"0.28"},{"1":"sexactiv_f","2":"Yes","3":"sex","4":"3","5":"80895","6":"83402","7":"161808","8":"96.99","9":"96.88","10":"97.11"},{"1":"sexactiv_f","2":"Yes","3":"sex","4":"4","5":"863","6":"83402","7":"161808","8":"1.03","9":"0.97","10":"1.11"},{"1":"sexactiv_f","2":"Yes","3":"sex","4":"9","5":"929","6":"83402","7":"161808","8":"1.11","9":"1.04","10":"1.19"},{"1":"sexactiv_f","2":"Yes","3":"sex","4":"NA","5":"439","6":"83402","7":"161808","8":"0.53","9":"0.48","10":"0.58"},{"1":"sexactiv_f","2":"NA","3":"sex","4":"1","5":"59","6":"7167","7":"161808","8":"0.82","9":"0.64","10":"1.06"},{"1":"sexactiv_f","2":"NA","3":"sex","4":"2","5":"10","6":"7167","7":"161808","8":"0.14","9":"0.08","10":"0.26"},{"1":"sexactiv_f","2":"NA","3":"sex","4":"3","5":"5213","6":"7167","7":"161808","8":"72.74","9":"71.69","10":"73.75"},{"1":"sexactiv_f","2":"NA","3":"sex","4":"4","5":"26","6":"7167","7":"161808","8":"0.36","9":"0.25","10":"0.53"},{"1":"sexactiv_f","2":"NA","3":"sex","4":"9","5":"1259","6":"7167","7":"161808","8":"17.57","9":"16.70","10":"18.47"},{"1":"sexactiv_f","2":"NA","3":"sex","4":"NA","5":"600","6":"7167","7":"161808","8":"8.37","9":"7.75","10":"9.04"}],"options":{"columns":{"min":{},"max":[10],"total":[10]},"rows":{"min":[18],"max":[18],"total":[18]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>There are 73 women who report never having sex and having sex in the past year. To be conservative, we will drop these women.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGFkX3NleCA8LSBiYXNlbGluZSAlPiUgXG4gIG11dGF0ZShcbiAgICBoYWRfc2V4ID0gY2FzZV93aGVuKFxuICAgICAgc2V4YWN0aXZfZiA9PSBcIk5vXCIgfCBzZXggPT0gMSB+IEZBTFNFLFxuICAgICAgc2V4YWN0aXZfZiA9PSBcIlllc1wiIH4gVFJVRSxcbiAgICAgIFRSVUUgfiBOQVxuICAgIClcbiAgKVxuaGFkX3NleCAlPiUgXG4gIGdyb3VwX2J5KGhhZF9zZXgpICU+JSBcbiAgZnJlcV90YWJsZSgpXG5gYGAifQ== -->
+<pre class="r"><code>had_sex &lt;- baseline %&gt;% 
+  mutate(
+    had_sex = case_when(
+      sexactiv_f == &quot;No&quot; | sex == 1 ~ FALSE,
+      sexactiv_f == &quot;Yes&quot; ~ TRUE,
+      TRUE ~ NA
+    )
+  )
+had_sex %&gt;% 
+  group_by(had_sex) %&gt;% 
+  freq_table()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImZyZXFfdGFibGVfb25lX3dheSIsInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibmNvbCI6NywibnJvdyI6M30sInJkZiI6Ikg0c0lBQUFBQUFBQUE0VlJzVTdETUJDOXhDMVJJN1cwQXJFd3NCYUpabUJnOWdCVUhXSHFVS2t5cnFFVnFWMDVLVlJNTUREM0cvaUJ6b3dJc1FHL2dNVE13QVFiRFhZU3B5VUxsaTYrZS9kT3pudDN2Ti9lZGRzdUFOaUFDZ2hzcE5LQ3JUNFdGS0NrN3drQVdsT0pvNktxQXFVTnAwOTYzWUJOL2lrQjNIZ29PZFoxY3BkanpOcDRCdXZnQm1EektjUHNTVFVMZ0lyRzhHRmwvZXE5T2NPdGgzZ1kxNmFkK3Rmak5Pc2ZmTVkxYnQwMVo0cUphN3JxYkMvbWQxN1VlY1d0dC91amo5c3RYTlB0K25kT2FaSDZKQWhTbFFaMGV5UWszcWtrUTVhbmM0VVp1cE9DNklKSWsxSVNHZys1Y1lWM1F4RVMzNVFqSmluamhvWjhhanBvck5LLzc1V2t1UFRNbTlvclczc1pSZEdQdXVZNXNpTkc0VUJ3UmJYTjd1WTVaWlpNZDJPbHUxbHVybzY1ZnFyWG9QMHhQMi9zNWFqbE5FZEx1WlA4QW9weWxqaFVESWNMa1N1TW53MDRNeVl5S1lWeHJPaVRFMlljcUNpNXNWcHZKQWZadEt2UXdGdjIwS1hDTjBnaWN2NExHZnlzbGRVQ0FBQT0ifQ== -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["var"],"name":[1],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[2],"type":["lgl"],"align":["right"]},{"label":["n"],"name":[3],"type":["int"],"align":["right"]},{"label":["n_total"],"name":[4],"type":["int"],"align":["right"]},{"label":["percent"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lcl"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ucl"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"had_sex","2":"FALSE","3":"71371","4":"161808","5":"44.11","6":"43.87","7":"44.35"},{"1":"had_sex","2":"TRUE","3":"83329","4":"161808","5":"51.50","6":"51.26","7":"51.74"},{"1":"had_sex","2":"NA","3":"7108","4":"161808","5":"4.39","6":"4.29","7":"4.49"}],"options":{"columns":{"min":{},"max":[10],"total":[7]},"rows":{"min":[10],"max":[10],"total":[3]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuNzEzNzEgKyA3MTA4XG5gYGAifQ== -->
+<pre class="r"><code>71371 + 7108</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDc4NDc5XG4ifQ== -->
+<pre><code>[1] 78479</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGFkX3NleCA8LSBoYWRfc2V4ICU+JSBmaWx0ZXIoaGFkX3NleClcbmFib3V0X2RhdGEoaGFkX3NleClcbmBgYCJ9 -->
+<pre class="r"><code>had_sex &lt;- had_sex %&gt;% filter(had_sex)
+about_data(had_sex)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiODMsMzI5IG9ic2VydmF0aW9ucyBhbmQgMTM2IHZhcmlhYmxlc1wiXG4ifQ== -->
+<pre><code>[1] &quot;83,329 observations and 136 variables&quot;</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>71,371 reported not having sex in the past year and the status of past year sexual activity could not be determined for 7,108. Those 78,479 women were excluded from the data – leaving 83,329 women remaining for analysis.</p>
+<hr />
+</div>
+<div id="missing-abuse-status" class="section level1">
+<h1>Missing abuse status</h1>
+<p>Currently, the flow chart says that 184 women were excluded due to missing VA/PA. This is true. These women will be excluded from Table 1. However, I will impute this values for our regression models.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuaGFkX3NleCAlPiUgXG4gIGdyb3VwX2J5KGFidXNlX2RfZikgJT4lIFxuICBmcmVxX3RhYmxlKClcbmBgYCJ9 -->
+<pre class="r"><code>had_sex %&gt;% 
+  group_by(abuse_d_f) %&gt;% 
+  freq_table()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImZyZXFfdGFibGVfb25lX3dheSIsInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibmNvbCI6NywibnJvdyI6NX0sInJkZiI6Ikg0c0lBQUFBQUFBQUE2MVNNVS9iUUJTKytHS3NXSUpXcFhOd0pRUlVMWmJhL2dBYkNkUU5pUTRSbFNwRlorZFNvanAzMGRrT0xWMWFDV1lXRmpxemRLblVqYUZMcWZwRG1HRmxxcFR3enVjWGlMUDJwTE8vKzk1Mzk5Nzc3dDVzN3I1MGQxMUNpRVZvblJLTEFxeGI4S21ST21uby8wZEM2Q0lBQitaRG1IWVphTEFvVDNtNzArNytGNExRK2VKd25WbFhBNFF1eFhCVEZjMGxmTWlUdEZMT293MTlsQ2RrNXZVNVMzUEZPMldrdVNIU2ZRNXJiN0QzaVVYUHZTalBDdDJRcTRoRk15cEQzOG1LWGFYSzJwWWxvbTk1V2luTWpoT1dZbDJUYXJzc3pxUUNOSUtKUGVwdFd2bU0xTHdsUXBZdkpySGExdGVaU2NoQ3VhOFl3ZStybytiNXpuWHcvVlNQYjJIcnllc2Zqdzh1dzVXVGcwdEFNL3BmYXpjWHgrK2VCbWRGK0hQWVdueWxSN2hpZU5RSGh5WWUvQVYyN2VaUDhOUGtDVnYrK2M3VjBWSzRhamMxTUczVGNhVlR0OE15NW5jVjYvT3FNUUk0Tk1aQkE0ZE1JWXhaaHM5TmxNQVI3VXhtTE1IbGdLdVlDNVRSSk1ZSXpRRk81MnNvdWU5alRtMnI5UVUrNC9ING43bUdLYkVqQjFsUENwQmErTXhIbGM1cSt2cmM4bW1TU3ZCQkxuU3F6bnE4bDRzUDZ5OHEwdmtTMi9ld1kwcW9vNE5vaVJQTGZ2K3V5VGt1M3ZjRVJ4TzVVaElkc3hNV2NYUmdBZG90dXZVSHFqZlo3UUtiK3ZjOWRHT1pJR09hSE4wQ1BvQkhpd0FFQUFBPSJ9 -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["var"],"name":[1],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["n"],"name":[3],"type":["int"],"align":["right"]},{"label":["n_total"],"name":[4],"type":["int"],"align":["right"]},{"label":["percent"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lcl"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ucl"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"abuse_d_f","2":"Abuse not measured","3":"2","4":"83329","5":"0.00","6":"0.00","7":"0.01"},{"1":"abuse_d_f","2":"Answered phyab, but not verbab","3":"115","4":"83329","5":"0.14","6":"0.11","7":"0.17"},{"1":"abuse_d_f","2":"Answered verbab, but not phyab","3":"43","4":"83329","5":"0.05","6":"0.04","7":"0.07"},{"1":"abuse_d_f","2":"No","3":"73759","4":"83329","5":"88.52","6":"88.30","7":"88.73"},{"1":"abuse_d_f","2":"Yes","3":"9410","4":"83329","5":"11.29","6":"11.08","7":"11.51"}],"options":{"columns":{"min":{},"max":[10],"total":[7]},"rows":{"min":[10],"max":[10],"total":[5]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuMTE1ICsgNDNcbmBgYCJ9 -->
+<pre class="r"><code>115 + 43</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDE1OFxuIn0= -->
+<pre><code>[1] 158</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>For the 158 women who answered “Answered phyab, but not verbab” and “Answered verbab, but not phyab” above, they really answered “no” for one and missing for the other. Therefore, we still can’t say “yes” or “no” for abuse overall. Therefore, for Table 1, we will have to exclude 160 women whose abuse status was unknown.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubm9fbWlzc19hYnVzZSA8LSBoYWRfc2V4ICU+JSBmaWx0ZXIoYWJ1c2VfZF9mID09IFwiTm9cIiB8IGFidXNlX2RfZiA9PSBcIlllc1wiKVxuYWJvdXRfZGF0YShub19taXNzX2FidXNlKVxuYGBgIn0= -->
+<pre class="r"><code>no_miss_abuse &lt;- had_sex %&gt;% filter(abuse_d_f == &quot;No&quot; | abuse_d_f == &quot;Yes&quot;)
+about_data(no_miss_abuse)</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiODMsMTY5IG9ic2VydmF0aW9ucyBhbmQgMTM2IHZhcmlhYmxlc1wiXG4ifQ== -->
+<pre><code>[1] &quot;83,169 observations and 136 variables&quot;</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>What was the distribution of ct/os among this group of women?</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubm9fbWlzc19hYnVzZSAlPiUgXG4gIGdyb3VwX2J5KGN0b3NfZikgJT4lIFxuICBmcmVxX3RhYmxlKClcbmBgYCJ9 -->
+<pre class="r"><code>no_miss_abuse %&gt;% 
+  group_by(ctos_f) %&gt;% 
+  freq_table()</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbImZyZXFfdGFibGVfb25lX3dheSIsInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibmNvbCI6NywibnJvdyI6Mn0sInJkZiI6Ikg0c0lBQUFBQUFBQUExMVJMVXpEUUJTKzlibzFhN0pCQWppQ3hxeGlEa0hTaEJFTUM4bEFUSkFzeCswS0M5MWRjKzBHUVdHVzROQ2cwV2dFQ29IQ294Y2tDb0Z0dWY2OGp0MGw3KzU3Lys5OTErdjAyM2JmUmdnWkNKc1lHVmhCMDFCWEJabW9ucjdYQ09FMUJTd2xxMWxnN3FqUlNJUURUOU1RYm1ReGFZSHNYU3BXODltVSthRld5ZGc3QVhSMHJHVlVxVTlDU0NqTGVFUzFrd3JGU29xR2R4c0l2WDZVZXFVenp3U2hacXE3blovdjJkWkx6KzAyMTIvbUI4OEwrN3VYSHZmdzY5UGVEWjVLKy83bTl1L2IvYW5iM1hsUTV6RWZDeWZhSlBhUVJNVHhKQmt6ZlhDdWJEQzRWUmp4bEVpQWxFUkFNUytBeFFlUmlJZ1Bhc0FrWlJ6Q3NFL0JneWNLTHZlclMzSGxRTStNZ2x0MUpVa1M1elF0QlZzaWlFYUNxMUFEdmpiV05xdWs5TnJGUHlMTnVUTGhhYXRoaTE1TStHV3JyWVUyRnQ5Zllpc2Z3UVFHZ1JLTGl2RjRzV1NOOGZNUlowQWlrMUlBWTFXZm5ERmdvS25XemJaMUFqa3FzMjFsRFozL0hOcFUrR0RKbDR6L0FBVVptYUgwQWdBQSJ9 -->
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["var"],"name":[1],"type":["chr"],"align":["left"]},{"label":["cat"],"name":[2],"type":["fctr"],"align":["left"]},{"label":["n"],"name":[3],"type":["int"],"align":["right"]},{"label":["n_total"],"name":[4],"type":["int"],"align":["right"]},{"label":["percent"],"name":[5],"type":["dbl"],"align":["right"]},{"label":["lcl"],"name":[6],"type":["dbl"],"align":["right"]},{"label":["ucl"],"name":[7],"type":["dbl"],"align":["right"]}],"data":[{"1":"ctos_f","2":"CT","3":"34837","4":"83169","5":"41.89","6":"41.55","7":"42.22"},{"1":"ctos_f","2":"OS","3":"48332","4":"83169","5":"58.11","6":"57.78","7":"58.45"}],"options":{"columns":{"min":{},"max":[10],"total":[7]},"rows":{"min":[10],"max":[10],"total":[2]},"pages":{}}}
+  </script>
+</div>
+<!-- rnb-frame-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<p>Currently, the flow chart has a box for women excluded due to missing data on the outcome variables (i.e., sexual satisfaction and sexual frequency satisfaction). However, we actually just impute these variables.</p>
+<p>So, our final sample size for Table 1 will be 83, 169 - with greater amounts of missing for many of the covariates. The final sample size for the regression models will be 83,329.</p>
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxucm0oYW5hbHlzaXNfMDksIGJhc2VsaW5lLCBoYWRfc2V4LCBub19taXNzX2FidXNlKVxuYGBgIn0= -->
+<pre class="r"><code>rm(analysis_09, baseline, had_sex, no_miss_abuse)</code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
 <!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-chunk-end -->
+</div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiUGFydGljaXBhbnQgRmxvdyBEaWFncmFtIgpkYXRlOiAiQ3JlYXRlZDogMjAxOC0wMS0xMiA8YnI+IFVwZGF0ZWQ6IGByIFN5cy5EYXRlKClgIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKZGlzY3Vzc2lvbjogRG8gdGhpcyBwYXJ0IGxhc3QuLi4KLS0tCgpgciBybWFya2Rvd246Om1ldGFkYXRhJGRlc2NyaXB0aW9uYAoKYGBge3Igc2V0dXAsIGluY2x1ZGU9RkFMU0V9CmtuaXRyOjpvcHRzX2NodW5rJHNldChjb21tZW50ID0gTkEpClN5cy5zZXRlbnYoVFogPSAiVVMvQ2VudHJhbCIpCmBgYAoKYGBge3IgbG9hZF9wYWNrYWdlcywgbWVzc2FnZT1GQUxTRX0KIyBMb2FkIHBhY2thZ2VzCmxpYnJhcnkodGlkeXZlcnNlKQpgYGAKCmBgYHtyfQoKYGBgCgoKCmBgYHtyIGVjaG89RkFMU0V9CnNlc3Npb25JbmZvKCkKYGBgCg==</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiUGFydGljaXBhbnQgRmxvdyBEaWFncmFtIgpkYXRlOiAiQ3JlYXRlZDogMjAxOC0wMS0xMiA8YnI+IFVwZGF0ZWQ6IGByIFN5cy5EYXRlKClgIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKZGlzY3Vzc2lvbjogRG8gdGhpcyBwYXJ0IGxhc3QuLi4KLS0tCgpgciBybWFya2Rvd246Om1ldGFkYXRhJGRlc2NyaXB0aW9uYAoKYGBge3Igc2V0dXAsIGluY2x1ZGU9RkFMU0V9CmtuaXRyOjpvcHRzX2NodW5rJHNldChjb21tZW50ID0gTkEpClN5cy5zZXRlbnYoVFogPSAiVVMvQ2VudHJhbCIpCmBgYAoKYGBge3IgbG9hZF9wYWNrYWdlcywgbWVzc2FnZT1GQUxTRX0KIyBMb2FkIHBhY2thZ2VzCmxpYnJhcnkodGlkeXZlcnNlKQpsaWJyYXJ5KGZlYXRoZXIpCmxpYnJhcnkoYmZ1bmNzKQpgYGAKCioqTWF5IHdhbnQgdG8gcHV0IHRoaXMgaW50byBEaWFncmFtbVIgYXQgc29tZSBwb2ludC4qKgoKIyBMb2FkIGRhdGEgYW5kIHN1YnNldCBiYXNlbGluZQoKQmFzZWxpbmUgaXMgZWl0aGVyIGVhY2ggd29tYW4ncyBmaXJzdCByZXNwb25zZSB0byBhbiBhYnVzZSBxdWVzdGlvbiBvciBkYXkgMCBpZiBzaGUgbmV2ZXIgcmVzcG9uZGVkIHRvIGVpdGhlciBhYnVzZSBxdWVzdGlvbi4KCiogYW5hbHlzaXNfMDkgd2FzIGNyZWF0ZWQgaW4gcHJlcHJvY2Vzc18wNV9jb3ZhcmlhdGVzLlJtZC4KCmBgYHtyfQphbmFseXNpc18wOSA8LSByZWFkX2ZlYXRoZXIoIi4uL2RhdGEvYW5hbHlzaXNfMDkuZmVhdGhlciIpCmFib3V0X2RhdGEoYW5hbHlzaXNfMDkpCmBgYAoKYGBge3J9CmJhc2VsaW5lIDwtIGFuYWx5c2lzXzA5ICU+JSAKICBtdXRhdGUoCiAgICBiYXNlbGluZSA9IGNhc2Vfd2hlbigKICAgICAgZmlyc3RfYWJfb2JzID09IFRSVUUgfiBUUlVFLAogICAgICBhYnVzZV9ldmVyID09IC0zICYgZGF5cyA9PSAwIH4gVFJVRQogICAgKQogICkgJT4lIAogIGZpbHRlcihiYXNlbGluZSkKYWJvdXRfZGF0YShiYXNlbGluZSkgIyAxNjEsODA4IG9ic2VydmF0aW9ucyBhbmQgMTM1IHZhcmlhYmxlcwpgYGAKCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCiMgU3RhcnRlZCB3aXRoIDE2MSw4MDggd29tZW4uIFdoYXQgd2FzIHRoZSBjb3VudCBieSBjdC9vcz8KCmBgYHtyfQpiYXNlbGluZSAlPiUgCiAgZ3JvdXBfYnkoY3Rvc19mKSAlPiUgCiAgZnJlcV90YWJsZSgpCmBgYAoKCi0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0KCiMgTm8gc2V4dWFsIGFjdGl2aXR5IGV4Y2x1c2lvbnMKClRoZXJlIGFyZSB0d28gcmVsZXZhbnQgcXVlc3Rpb25zIGhlcmUuCgoqIEZyb20gW2Zvcm0gMzddKGh0dHBzOi8vd3d3LndoaS5vcmcvcmVzZWFyY2hlcnMvZGF0YS9XaGlEYXRhRGljdC9mMzdfY3Rvc19pbnYucGRmKSBhbmQgW2Zvcm0gMzhdKGh0dHBzOi8vd3d3LndoaS5vcmcvcmVzZWFyY2hlcnMvZGF0YS9XaGlEYXRhRGljdC9mMzhfY3Rvc19mdV9pbnYucGRmKTogRGlkIHlvdSBoYXZlIGFueSBzZXh1YWwgYWN0aXZpdHkgd2l0aCBhIHBhcnRuZXIgaW4gdGhlIGxhc3QgeWVhcj8KCiogRnJvbSBbZm9ybSAzN10oaHR0cHM6Ly93d3cud2hpLm9yZy9yZXNlYXJjaGVycy9kYXRhL1doaURhdGFEaWN0L2YzN19jdG9zX2ludi5wZGYpOiBSZWdhcmRsZXNzIG9mIHdoZXRoZXIgeW91IGFyZSBjdXJyZW50bHkgc2V4dWFsbHkgYWN0aXZlLCB3aGljaCByZXNwb25zZSBiZXN0IGRlc2NyaWJlcyB3aG8geW91IGhhdmUgaGFkIHNleCB3aXRoIG92ZXIgeW91ciBhZHVsdCBsaWZldGltZT8KClJlbW92ZSB3b21lbiB3aG8gc2F5IHRoZXkgaGF2ZW4ndCBoYWQgc2V4IGluIHRoZSBwYXN0IHllYXIgYW5kIHdvbWVuIHdobyBzYXkgdGhhdCB0aGV5IGhhdmUgbmV2ZXIgaGFkIHNleC4gQWRkaXRpb25hbGx5LCBJIG5lZWQgdG8gcmVtb3ZlIHdvbWVuIHdobyBhcmUgbWlzc2luZyB0aGlzIGluZm9ybWF0aW9uLiBJIGNhbid0IGp1c3QgaW1wdXRlIGEgdmFsdWUgYmVjYXVzZSBJIGFtIHN1Yi1zZXR0aW5nIChkcm9wcGluZyB3b21lbiB3aG8gd2VyZSBub3Qgc2V4dWFsbHkgYWN0aXZlIGluIHRoZSBwYXN0IHllYXIpIGJhc2VkIG9uIHRoaXMgdmFyaWFibGUsIGFzIG9wcG9zZWQgdG8gbW9kZWxpbmcuIEltcHV0aW5nIHdpbGwgcG90ZW50aWFsbHkgZ2l2ZSBtZSBkaWZmZXJlbnQgdmFsdWVzIGZvciBzZXh1YWwgYWN0aXZpdHkgaW4gdGhlIHBhc3QgeWVhciB3aXRoaW4gd29tYW4uCgpgYGB7ciByb3dzLnByaW50PTE4fQpiYXNlbGluZSAlPiUgCiAgZ3JvdXBfYnkoc2V4YWN0aXZfZiwgc2V4KSAlPiUgCiAgZnJlcV90YWJsZSgpCmBgYAoKVGhlcmUgYXJlIDczIHdvbWVuIHdobyByZXBvcnQgbmV2ZXIgaGF2aW5nIHNleCBhbmQgaGF2aW5nIHNleCBpbiB0aGUgcGFzdCB5ZWFyLiBUbyBiZSBjb25zZXJ2YXRpdmUsIHdlIHdpbGwgZHJvcCB0aGVzZSB3b21lbi4KCmBgYHtyfQpoYWRfc2V4IDwtIGJhc2VsaW5lICU+JSAKICBtdXRhdGUoCiAgICBoYWRfc2V4ID0gY2FzZV93aGVuKAogICAgICBzZXhhY3Rpdl9mID09ICJObyIgfCBzZXggPT0gMSB+IEZBTFNFLAogICAgICBzZXhhY3Rpdl9mID09ICJZZXMiICAgICAgICAgICB+IFRSVUUsCiAgICAgIFRSVUUgICAgICAgICAgICAgICAgICAgICAgICAgIH4gTkEKICAgICkKICApCgpoYWRfc2V4ICU+JSAKICBncm91cF9ieShoYWRfc2V4KSAlPiUgCiAgZnJlcV90YWJsZSgpCmBgYAoKYGBge3J9CjcxMzcxICsgNzEwOApgYGAKCmBgYHtyfQpoYWRfc2V4IDwtIGhhZF9zZXggJT4lIGZpbHRlcihoYWRfc2V4KQphYm91dF9kYXRhKGhhZF9zZXgpICMgODMsMzI5IG9ic2VydmF0aW9ucyBhbmQgMTM2IHZhcmlhYmxlcwpgYGAKCjcxLDM3MSByZXBvcnRlZCBub3QgaGF2aW5nIHNleCBpbiB0aGUgcGFzdCB5ZWFyIGFuZCB0aGUgc3RhdHVzIG9mIHBhc3QgeWVhciBzZXh1YWwgYWN0aXZpdHkgY291bGQgbm90IGJlIGRldGVybWluZWQgZm9yIDcsMTA4LiBUaG9zZSA3OCw0Nzkgd29tZW4gd2VyZSBleGNsdWRlZCBmcm9tIHRoZSBkYXRhIC0tIGxlYXZpbmcgODMsMzI5IHdvbWVuIHJlbWFpbmluZyBmb3IgYW5hbHlzaXMuIAoKLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLQoKIyBNaXNzaW5nIGFidXNlIHN0YXR1cwoKQ3VycmVudGx5LCB0aGUgZmxvdyBjaGFydCBzYXlzIHRoYXQgMTg0IHdvbWVuIHdlcmUgZXhjbHVkZWQgZHVlIHRvIG1pc3NpbmcgVkEvUEEuIFRoaXMgaXMgdHJ1ZS4gVGhlc2Ugd29tZW4gd2lsbCBiZSBleGNsdWRlZCBmcm9tIFRhYmxlIDEuIEhvd2V2ZXIsIEkgd2lsbCBpbXB1dGUgdGhpcyB2YWx1ZXMgZm9yIG91ciByZWdyZXNzaW9uIG1vZGVscy4KCmBgYHtyfQpoYWRfc2V4ICU+JSAKICBncm91cF9ieShhYnVzZV9kX2YpICU+JSAKICBmcmVxX3RhYmxlKCkKYGBgCgpgYGB7cn0KMTE1ICsgNDMKYGBgCgpGb3IgdGhlIDE1OCB3b21lbiB3aG8gYW5zd2VyZWQgIkFuc3dlcmVkIHBoeWFiLCBidXQgbm90IHZlcmJhYiIgYW5kICJBbnN3ZXJlZCB2ZXJiYWIsIGJ1dCBub3QgcGh5YWIiIGFib3ZlLCB0aGV5IHJlYWxseSBhbnN3ZXJlZCAibm8iIGZvciBvbmUgYW5kIG1pc3NpbmcgZm9yIHRoZSBvdGhlci4gVGhlcmVmb3JlLCB3ZSBzdGlsbCBjYW4ndCBzYXkgInllcyIgb3IgIm5vIiBmb3IgYWJ1c2Ugb3ZlcmFsbC4gVGhlcmVmb3JlLCBmb3IgVGFibGUgMSwgd2Ugd2lsbCBoYXZlIHRvIGV4Y2x1ZGUgMTYwIHdvbWVuIHdob3NlIGFidXNlIHN0YXR1cyB3YXMgdW5rbm93bi4KCmBgYHtyfQpub19taXNzX2FidXNlIDwtIGhhZF9zZXggJT4lIGZpbHRlcihhYnVzZV9kX2YgPT0gIk5vIiB8IGFidXNlX2RfZiA9PSAiWWVzIikKYWJvdXRfZGF0YShub19taXNzX2FidXNlKSAjIDgzLDE2OSBvYnNlcnZhdGlvbnMgYW5kIDEzNiB2YXJpYWJsZXMKYGBgCgpXaGF0IHdhcyB0aGUgZGlzdHJpYnV0aW9uIG9mIGN0L29zIGFtb25nIHRoaXMgZ3JvdXAgb2Ygd29tZW4/CgpgYGB7cn0Kbm9fbWlzc19hYnVzZSAlPiUgCiAgZ3JvdXBfYnkoY3Rvc19mKSAlPiUgCiAgZnJlcV90YWJsZSgpCmBgYAoKQ3VycmVudGx5LCB0aGUgZmxvdyBjaGFydCBoYXMgYSBib3ggZm9yIHdvbWVuIGV4Y2x1ZGVkIGR1ZSB0byBtaXNzaW5nIGRhdGEgb24gdGhlIG91dGNvbWUgdmFyaWFibGVzIChpLmUuLCBzZXh1YWwgc2F0aXNmYWN0aW9uIGFuZCBzZXh1YWwgZnJlcXVlbmN5IHNhdGlzZmFjdGlvbikuIEhvd2V2ZXIsIHdlIGFjdHVhbGx5IGp1c3QgaW1wdXRlIHRoZXNlIHZhcmlhYmxlcy4KClNvLCBvdXIgZmluYWwgc2FtcGxlIHNpemUgZm9yIFRhYmxlIDEgd2lsbCBiZSA4MywgMTY5IC0gd2l0aCBncmVhdGVyIGFtb3VudHMgb2YgbWlzc2luZyBmb3IgbWFueSBvZiB0aGUgY292YXJpYXRlcy4gVGhlIGZpbmFsIHNhbXBsZSBzaXplIGZvciB0aGUgcmVncmVzc2lvbiBtb2RlbHMgd2lsbCBiZSA4MywzMjkuCgpgYGB7cn0Kcm0oYW5hbHlzaXNfMDksIGJhc2VsaW5lLCBoYWRfc2V4LCBub19taXNzX2FidXNlKQpgYGAKCmBgYHtyIGVjaG89RkFMU0V9CnNlc3Npb25JbmZvKCkKYGBgCg==</div>
 
 
 

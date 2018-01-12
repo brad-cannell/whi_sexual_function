@@ -100,12 +100,7 @@ about_data(dt) # 1,432,448 observations and 38 variables
 
 -------------------------------------------------------------------------------
 
-Sexual activity in the past year is not being used for modeling. Rather, we will drop women that were not sexually active in the previous year. Multiple imputation is not prediction. And therefore, it would be inappropriate to try to somehow use MI to predict which women were sexually active in the past year, and retain their data for analysis.
-
-> The main message is that we cannot evaluate imputation methods by their ability to re-create the true data, or by their ability to optimize classification accuracy. Imputation is not prediction.
-van Buuren, Stef (2012-05-14). Flexible Imputation of Missing Data (Chapman & Hall/CRC Interdisciplinary Statistics) (Page 46). Taylor and Francis CRC ebook account. Kindle Edition. 
-
-Another approach would be to impute all cases of missing sexual activity and then drop from each imputed dataset. However, that would lead to imbalanced numbers of observations within each imputed dataset. 
+Remove women who say they haven't had sex in the past year and women who say that they have never had sex. Additionally, I need to remove women who are missing this information. I can't just impute a value because I am sub-setting (dropping women who were not sexually active in the past year) based on this variable, as opposed to modeling. Imputing will potentially give me different values for sexual activity in the past year within woman.
 
 Decided to just use listwise deletion for sexual activity.
 
@@ -116,7 +111,7 @@ dt[baseline == 1][order(sexactiv_f)][, .(Women = .N), by = sexactiv_f][, Cumsum 
   , Percent := Women / max(Cumsum) * 100][]
 ```
 
-About 4% missing sexual activity at baselie, and another 71,239 reported no sexual activity.
+About 4% missing sexual activity at baseline, and another 71,239 reported no sexual activity.
 
 ```{r}
 71239 + 7167 # 78,406 women have no or NA for sexactive_f at baseline.
@@ -252,7 +247,8 @@ dt <- dt %>%
     satisfied_f, freq_satisfied_f,
     
     # Abuse variables
-    # Since we are only using 4-level abuse in the MI models, go ahead and drop the 2-level abuse variable.
+    # Since we are only using 4-level abuse in the MI models, go ahead and drop 
+    # the 2-level abuse variable.
     abuse4cat_f,
     
     # Sociodemographic covariates

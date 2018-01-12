@@ -15,13 +15,130 @@ Sys.setenv(TZ = "US/Central")
 ```{r load_packages, message=FALSE}
 # Load packages
 library(tidyverse)
+library(feather)
+library(bfuncs)
+```
+
+**May want to put this into DiagrammR at some point.**
+
+# Load data and subset baseline
+
+Baseline is either each woman's first response to an abuse question or day 0 if she never responded to either abuse question.
+
+* analysis_09 was created in preprocess_05_covariates.Rmd.
+
+```{r}
+analysis_09 <- read_feather("../data/analysis_09.feather")
+about_data(analysis_09)
 ```
 
 ```{r}
+baseline <- analysis_09 %>% 
+  mutate(
+    baseline = case_when(
+      first_ab_obs == TRUE ~ TRUE,
+      abuse_ever == -3 & days == 0 ~ TRUE
+    )
+  ) %>% 
+  filter(baseline)
+about_data(baseline) # 161,808 observations and 135 variables
+```
 
+-------------------------------------------------------------------------------
+
+# Started with 161,808 women. What was the count by ct/os?
+
+```{r}
+baseline %>% 
+  group_by(ctos_f) %>% 
+  freq_table()
 ```
 
 
+-------------------------------------------------------------------------------
+
+# No sexual activity exclusions
+
+There are two relevant questions here.
+
+* From [form 37](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf) and [form 38](https://www.whi.org/researchers/data/WhiDataDict/f38_ctos_fu_inv.pdf): Did you have any sexual activity with a partner in the last year?
+
+* From [form 37](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf): Regardless of whether you are currently sexually active, which response best describes who you have had sex with over your adult lifetime?
+
+Remove women who say they haven't had sex in the past year and women who say that they have never had sex. Additionally, I need to remove women who are missing this information. I can't just impute a value because I am sub-setting (dropping women who were not sexually active in the past year) based on this variable, as opposed to modeling. Imputing will potentially give me different values for sexual activity in the past year within woman.
+
+```{r rows.print=18}
+baseline %>% 
+  group_by(sexactiv_f, sex) %>% 
+  freq_table()
+```
+
+There are 73 women who report never having sex and having sex in the past year. To be conservative, we will drop these women.
+
+```{r}
+had_sex <- baseline %>% 
+  mutate(
+    had_sex = case_when(
+      sexactiv_f == "No" | sex == 1 ~ FALSE,
+      sexactiv_f == "Yes"           ~ TRUE,
+      TRUE                          ~ NA
+    )
+  )
+
+had_sex %>% 
+  group_by(had_sex) %>% 
+  freq_table()
+```
+
+```{r}
+71371 + 7108
+```
+
+```{r}
+had_sex <- had_sex %>% filter(had_sex)
+about_data(had_sex) # 83,329 observations and 136 variables
+```
+
+71,371 reported not having sex in the past year and the status of past year sexual activity could not be determined for 7,108. Those 78,479 women were excluded from the data -- leaving 83,329 women remaining for analysis. 
+
+-------------------------------------------------------------------------------
+
+# Missing abuse status
+
+Currently, the flow chart says that 184 women were excluded due to missing VA/PA. This is true. These women will be excluded from Table 1. However, I will impute this values for our regression models.
+
+```{r}
+had_sex %>% 
+  group_by(abuse_d_f) %>% 
+  freq_table()
+```
+
+```{r}
+115 + 43
+```
+
+For the 158 women who answered "Answered phyab, but not verbab" and "Answered verbab, but not phyab" above, they really answered "no" for one and missing for the other. Therefore, we still can't say "yes" or "no" for abuse overall. Therefore, for Table 1, we will have to exclude 160 women whose abuse status was unknown.
+
+```{r}
+no_miss_abuse <- had_sex %>% filter(abuse_d_f == "No" | abuse_d_f == "Yes")
+about_data(no_miss_abuse) # 83,169 observations and 136 variables
+```
+
+What was the distribution of ct/os among this group of women?
+
+```{r}
+no_miss_abuse %>% 
+  group_by(ctos_f) %>% 
+  freq_table()
+```
+
+Currently, the flow chart has a box for women excluded due to missing data on the outcome variables (i.e., sexual satisfaction and sexual frequency satisfaction). However, we actually just impute these variables.
+
+So, our final sample size for Table 1 will be 83, 169 - with greater amounts of missing for many of the covariates. The final sample size for the regression models will be 83,329.
+
+```{r}
+rm(analysis_09, baseline, had_sex, no_miss_abuse)
+```
 
 ```{r echo=FALSE}
 sessionInfo()

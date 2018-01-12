@@ -3,6 +3,7 @@ title: "Preprocess 06: Subset Baseline Data"
 date: "Created: 2017-07-17 <br> Updated:`r Sys.Date()`"
 output: 
   github_document: default
+description: Fill this out when done.
 ---
 
 ```{r load_packages, message=FALSE}

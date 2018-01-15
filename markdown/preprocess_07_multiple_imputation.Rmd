@@ -2,7 +2,6 @@
 title: "Preprocess 07: Multiple Imputation"
 date: "Created: 2017-05-29 <br> Updated: `r Sys.Date()`"
 output: html_notebook
-discussion: Do this part last. Describe what actually happens in this file.
 ---
 
 <style>
@@ -12,13 +11,23 @@ discussion: Do this part last. Describe what actually happens in this file.
   }
 </style>
 
+# Overview
+
+In this file, we start with baseline only data for all women who were sexually active in the previous year. We impute values for women who are missing an observed value for abuse (4 category) and/or an observed value for any of the covariates of interest. We perform the imputations using the MICE algorithm (Van Buuren, 2011).
+
+Van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate imputation by chained equations in R. Journal of Statistical Software. Retrieved from http://doc.utwente.nl/78938/
+
+# Table of contents
+
+1. [Preprocessing for Multiple Imputation](#pre)   
+2. [Adjust multiple imputation settings](#settings)    
+3. [Generate the imputations](#mi)   
+4. [Post processing of imputed data](#post)
+
 ```{r load_packages, message=FALSE}
 Sys.setenv(TZ = "US/Central")
-
-# Load packages
 library(feather)
 library(tidyverse)
-library(data.table)
 library(mice)
 library(lubridate)
 library(bfuncs)
@@ -26,7 +35,7 @@ library(bfuncs)
 
 -------------------------------------------------------------------------------
 
-# Preprocessing for Multiple Imputation
+# Preprocessing for Multiple Imputation {#pre}
 
 -------------------------------------------------------------------------------
 
@@ -58,7 +67,7 @@ ini$nmis[order(ini$nmis)]
 
 * Lots of missing (8.5% to 99.1%) for: canc_f, packyrs, cvd_f, hypt_f, hip55_f, arthrit_f, hyst_f, bmi, bmi4cat_f, ssri_f, diab_f, diab_combined_f, and hormnw_f
 
-## Add the age/abuse interaction
+## Add the age/abuse interaction {#interaction}
 
 Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate imputation by chained equations in R. Journal of Statistical Software. Retrieved from http://doc.utwente.nl/78938/
 
@@ -79,40 +88,8 @@ baseline_only_w_interaction <- baseline_only %>%
   )
 ```
 
-Create a mean centered version of age before creating the interaction term
 
-```{r}
-baseline_only_w_interaction <- baseline_only_w_interaction %>% 
-  mutate(age_c = age - mean(age))
-```
 
-```{r}
-ini <- mice(baseline_only_w_interaction, m = 0, maxit = 0)
-```
-
-Adjust MI methods
-
-```{r}
-meth <- ini$method
-meth["age_abuse_phys_only"] <- "~I(abuse4cat_f.1 * age)"
-meth["age_abuse_verb_only"] <- "~I(abuse4cat_f.2 * age)"
-meth["age_abuse_both"]      <- "~I(abuse4cat_f.3 * age)"
-```
-
-Adjust prediction matrix again
-
-* Make sure administrative variables are not being used for imputation (e.g. id, ctos)
-
-* Don't predict main effect terms from interaction terms
-
-```{r}
-pred <- ini$predictorMatrix 
-
-pred[, c("id", "days", "ctos_f")] <- 0
-
-pred[c("age", "abuse4cat_f"), 
-     c("age_abuse_phys_only", "age_abuse_verb_only", "age_abuse_both")] <- 0
-```
 
 
 
@@ -121,28 +98,30 @@ pred[c("age", "abuse4cat_f"),
 
 -------------------------------------------------------------------------------
 
-# Adjust multiple imputation settings
+# Adjust multiple imputation settings {#settings}
 
 -------------------------------------------------------------------------------
 
 ## View logged events
 
-```{r logged_events}
-ini <- mice(baseline_only, m = 0, maxit = 0) # Dry run to view information about the imputation process
+Dry run to view information about the imputation process
+
+```{r}
+ini <- mice(baseline_only_w_interaction, m = 0, maxit = 0)
 ini$loggedEvents
 ```
 
-Need to drop the baseline variable
+We need to drop the baseline variable. Don't worry about the interaction variables. They are currently all "NA." They will be filled in during the imputation process.
 
 ```{r}
-baseline_only <- baseline_only %>% select(-baseline)
-about_data(baseline_only) # 83,329 observations and 52 variables
+baseline_only_w_interaction <- baseline_only_w_interaction %>% select(-baseline)
+about_data(baseline_only_w_interaction) # 83,329 observations and 55 variables
 ```
 
 Check again
 
 ```{r}
-ini <- mice(baseline_only, m = 0, maxit = 0)
+ini <- mice(baseline_only_w_interaction, m = 0, maxit = 0)
 ini$loggedEvents
 ```
 
@@ -152,11 +131,9 @@ Order data by missingness to speed up imputations
 order <- ini$nmis
 order <- sort(order)
 order <- names(order)
-baseline_only <- baseline_only %>% select(order)
+baseline_only_w_interaction <- baseline_only_w_interaction %>% select(order)
+rm(order)
 ```
-
-
-
 
 ## Adjust prediction matrix   
 
@@ -164,7 +141,7 @@ baseline_only <- baseline_only %>% select(order)
 * Easiest to view the pred matrix in data viewer    
 
 ```{r}
-ini <- mice(baseline_only, m = 0, maxit = 0)
+ini <- mice(baseline_only_w_interaction, m = 0, maxit = 0)
 pred <- ini$predictorMatrix 
 ```
 
@@ -173,10 +150,6 @@ The _rows_ of the predictor matrix correspond to the variables being predicted (
 * All completely observed vars (e.g., age) are not predicted by default (i.e., row of 0's)
 
 * Make sure administrative variables are not being used for imputation (e.g. id, ctos)   
-
-* Make sure var_days variables aren't imputing anything other than their specific var. For example, bmi_days should only be used to impute bmi, not marital status. __Update: we dropped var_days__
-
-* I don't think we want to impute the "_2" or "_days" variables. We are just using those to help predict baseline values for their respective vars. If the var (e.g. canc_f) is missing for every row within an observation, we still want to impute that value based on other variables (age, general health, etc.), but there isn't much to be gained by also imputing the "next closet value" for that variable.
 
 * Adjust any other variables that appear to be noise.   
 
@@ -188,8 +161,12 @@ The _rows_ of the predictor matrix correspond to the variables being predicted (
 pred[, c("id", "days", "ctos_f")] <- 0
 ```
 
+### Don't predict main effect terms from interaction terms
 
-
+```{r}
+pred[c("age", "abuse4cat_f"), 
+     c("age_abuse_phys_only", "age_abuse_verb_only", "age_abuse_both")] <- 0
+```
 
 ## Adjust MI methods
 
@@ -197,6 +174,16 @@ pred[, c("id", "days", "ctos_f")] <- 0
 
 ```{r}
 meth <- ini$method
+meth
+```
+
+### Adjust MI methods - move this down
+
+```{r}
+meth["age_abuse_phys_only"] <- "~I(abuse4cat_f.1 * age)"
+meth["age_abuse_verb_only"] <- "~I(abuse4cat_f.2 * age)"
+meth["age_abuse_both"]      <- "~I(abuse4cat_f.3 * age)"
+
 meth
 ```
 
@@ -210,37 +197,11 @@ meth
 
 -------------------------------------------------------------------------------
 
-# Generate the imputations
+# Generate the imputations {#mi}
 
 -------------------------------------------------------------------------------
 
-## No interaction terms
-
-```{r}
-start <- now()
-
-imp <- mice(data = baseline_only,
-            m = 10,                     # Default is 5
-            method = meth,              # Custom method vector created above
-            predictorMatrix = pred,     # Custom predictor matrix created above
-            seed = 20170511)            # For reproducability
-
-stop <- now()
-time <- difftime(stop, start)
-```
-
-```{r}
-time # MI took 2.598068 hours
-```
-
-## Save Multiply imputed data set (MIDS) object from mice
-
-```{r}
-imp_83329 <- imp
-write_rds(imp_83329, path = "../data/imp_83329.rds")
-```
-
-## Added interaction (2018-01-13)
+2018-01-13: Added interaction
 
 ```{r}
 start <- now()
@@ -265,7 +226,25 @@ time # MI took 2.673914 hours
 write_rds(imp_interaction, path = "../data/imp_interaction.rds")
 ```
 
-# Stack the imputed datasets
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Post processing of imputed data {#post}
+
+-------------------------------------------------------------------------------
+
+```{r}
+imp_interaction <- read_rds(path = "../data/imp_interaction.rds")
+```
+
+## Stack the imputed datasets
 
 ```{r}
 analysis_11_interaction <- complete(imp_interaction, action = "long", include = TRUE)
@@ -279,7 +258,7 @@ analysis_11_interaction %>%
   about_data() # 83,329 observations and 57 variables
 ```
 
-Check for missing
+## Check for missing
 
 Overall:
 
@@ -302,11 +281,32 @@ analysis_11_interaction %>%
 
 No missing values remain in the imputed data sets.
 
+Did the interaction terms get imputed as expected?
+
+```{r}
+analysis_11_interaction %>% 
+  filter(.imp == 1) %>% 
+  select(age, abuse4cat_f, age_abuse_phys_only:age_abuse_both)
+```
+
+The interaction terms did not run as expected. Need to rerun. Actually, the imputations are fine - I just need to change the variable name so that it makes sense.
+
+```{r}
+analysis_11_interaction <- analysis_11_interaction %>% 
+  mutate(age_abuse_none = age_abuse_both) %>% 
+  select(-age_abuse_both)
+```
+
+```{r}
+analysis_11_interaction %>% 
+  filter(.imp == 1) %>% 
+  select(age, abuse4cat_f, age_abuse_phys_only:age_abuse_none)
+```
+
 ## Put dichotomous abuse variable back in the data
 
-+ Make a numeric version of satisfied and freq satisfied for modeling.
-
-+ Create dissatisfied variables that will be used for modeling.
+* Make a numeric version of satisfied and freq satisfied for modeling.   
+* Create dissatisfied variables that will be used for modeling.   
 
 Need to change the order of factor levels for abuse4cat_f. Currently: "Physical and verbal abuse" "Physical abuse only" "Verbal abuse only" "Did not experience abuse"
 
@@ -329,16 +329,9 @@ analysis_11_interaction <- analysis_11_interaction %>%
   )
 ```
 
+## Convert analysis_11 back to a mids object that can be used for modeling: 
 
-
-
-# Left off here... Need to check to see if the impuations of the interaction terms make sense...
-
-
-
-
-
-Convert analysis_11 back to a mids object that can be used for modeling: https://cran.r-project.org/web/packages/mice/mice.pdf
+https://cran.r-project.org/web/packages/mice/mice.pdf
 
 ```{r}
 mids_interaction <- as.mids(analysis_11_interaction)
@@ -347,7 +340,7 @@ mids_interaction <- as.mids(analysis_11_interaction)
 ## Save new mids object
 
 ```{r}
-write_rds(mids_83329, "../data/mids_83329.rds")
+write_rds(mids_interaction, "../data/mids_interaction.rds")
 ```
 
 ## Save stacked data in feather format
@@ -359,25 +352,11 @@ write_feather(analysis_11, "../data/analysis_11.feather")
 ## Export to excel for SAS
 
 ```{r}
-readr::write_csv(analysis_11, "../data/analysis_11.csv") # Too large to open in Excel.
+readr::write_csv(analysis_11_interaction, "../data/analysis_11_interaction.csv")
 ```
-
-Ideally:
-
-* Need to run descriptive in SAS. Proc Freq, etc.
-
-* See if I can replicate in R. 
-
-* If not, post on SO.
-
-* Run models in SAS MI analyze. RR models vs. OR models.
-
-* See if I can replicate in R.
-
-In reality, we kind of just need to get this done. I think they will want OR models even if OR models are technically correct. For now, just give them table 2. We can always come back and revisit this if we need to.
 
 -------------------------------------------------------------------------------
 
 ```{r session_info, echo=FALSE}
-# sessionInfo()
+sessionInfo()
 ```

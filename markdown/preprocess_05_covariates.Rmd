@@ -1,49 +1,67 @@
 ---
 title: "Preprocess 05: Clean and Manage Covariates"
 date: "Created: 2017-07-17 <br> Updated: `r Sys.Date()`"
-output: 
-  github_document: default
+output: html_notebook
 ---
 
+<style>
+  hr {
+    background-color: #66b3ff;
+    height: 1px;
+  }
+</style>
+
+# Overview
+
+In this file, we do general preprocessing of covariate data. Specifically, we:
+
+* Recode missing   
+* Create factor variables   
+* Distribute time-invariant variables across all observations (e.g. race)   
+* Distribute "have you ever" variables (e.g. diabetes ever)   
+* Carry forward relatively time-stable variables (e.g. income)   
+* Perform variable transformations
+
+# Table of contents
+
+1. [Distributing selected covariates across observations](#distribute)   
+2. [Sociodemographic covariates](#socio)   
+3. [Health and health risk factors](#health)   
+4. [Menopausal symptoms and treatment variables](#menopausal)   
+5. [Save progress](#save)   
+
 ```{r load_packages, message=FALSE}
-# Load packages
+Sys.setenv(TZ = "US/Central")
 library(feather)
 library(tidyverse)
 library(data.table)
 library(zoo)
 library(gmodels)
-
-# Load functions
-source("../R scripts/functions.R")
+library(bfuncs)
+source("../r/functions.R")
 ```
 
--------------------------------------------------------------------------------
-
-# Cleaning covariates
-
--------------------------------------------------------------------------------
-
-* Recode missing
-
-* Create factor variables
-
-* Distribute time-invariant variables across all observations (e.g. race)
-
-* Distribute "have you ever" variables (e.g. diabetes ever)
-
-* Carry forward relatively time-stable variables (e.g. income)
-
 ```{r load_analysis_07}
-# Load data
 analysis_07 <- read_feather("../data/analysis_07.feather")
-check_data(analysis_07) # 1,432,448 observations and 93 variables
+about_data(analysis_07) # 1,432,448 observations and 93 variables
 ```
 
 ```{r}
 dt <- as.data.table(analysis_07)
 ```
 
-## Distributing selected covariates across observations
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Distributing selected covariates across observations {#distribute}
+
+-------------------------------------------------------------------------------
 
 ```{r time_invariant}
 # Variables that are either time-invariant, or considered to be nearly time-invariant in this sample
@@ -115,16 +133,20 @@ write_feather(analysis_08, path = "../data/analysis_08.feather")
 
 
 
+
+
+
+
 -------------------------------------------------------------------------------
 
-## Sociodemographic covariates
+# Sociodemographic covariates {#socio}
 
 -------------------------------------------------------------------------------
 
 ```{r}
 # Load data
 analysis_08 <- read_feather("../data/analysis_08.feather")
-check_data(analysis_08) # 1,432,448 observations and 93 variables
+about_data(analysis_08) # 1,432,448 observations and 93 variables
 ```
 
 ```{r}
@@ -328,9 +350,14 @@ dt[obs == 1, .(Women = .N), by = ctos_f][, Cumsum := cumsum(Women)][
 
 
 
+
+
+
+
+
 -------------------------------------------------------------------------------
 
-## Health and health risk factors
+# Health and health risk factors {#health}
 
 -------------------------------------------------------------------------------
 
@@ -575,9 +602,14 @@ dt[obs == 1][order(ssri_f), .(Women = .N), by = ssri_f][, Cumsum := cumsum(Women
 
 
 
+
+
+
+
+
 -------------------------------------------------------------------------------
 
-## Menopausal symptoms and treatment variables
+## Menopausal symptoms and treatment variables {#menopausal}
 
 -------------------------------------------------------------------------------
 
@@ -693,8 +725,21 @@ dt[first_hormnw == 1, .(Women = .N), by = hormnw_f][, Cumsum := cumsum(Women)][
 rm(ever_vars, time_invariant)
 ```
 
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Save progress {#save}
+
+-------------------------------------------------------------------------------
+
 ```{r save_analysis_09}
-# Save progress
 analysis_09 <- as_tibble(dt)
 write_feather(analysis_09, path = "../data/analysis_09.feather")
 ```

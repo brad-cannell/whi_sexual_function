@@ -22,7 +22,8 @@ Van Buuren, S., & Groothuis-Oudshoorn, K. (2011). mice: Multivariate imputation 
 1. [Preprocessing for Multiple Imputation](#pre)   
 2. [Adjust multiple imputation settings](#settings)    
 3. [Generate the imputations](#mi)   
-4. [Post processing of imputed data](#post)
+4. [Post processing of imputed data](#post)   
+5. [Save progress](#save)    
 
 ```{r load_packages, message=FALSE}
 Sys.setenv(TZ = "US/Central")
@@ -337,6 +338,20 @@ https://cran.r-project.org/web/packages/mice/mice.pdf
 mids_interaction <- as.mids(analysis_11_interaction)
 ```
 
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Save progress {#save}
+
+-------------------------------------------------------------------------------
+
 ## Save new mids object
 
 ```{r}
@@ -346,7 +361,7 @@ write_rds(mids_interaction, "../data/mids_interaction.rds")
 ## Save stacked data in feather format
 
 ```{r}
-write_feather(analysis_11, "../data/analysis_11.feather")
+write_feather(analysis_11_interaction, "../data/analysis_11_interaction.feather")
 ```
 
 ## Export to excel for SAS

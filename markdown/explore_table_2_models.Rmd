@@ -1,41 +1,26 @@
 ---
 title: "Exploring logistic models before creating Table 2"
 date: "Created: 2017-05-29 <br> Updated: `r Sys.Date()`"
-output: github_document
+output: html_notebook
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+<style>
+  hr {
+    background-color: #66b3ff;
+    height: 1px;
+  }
+</style>
 
-```{r load_packages,include=FALSE}
-# Load packages
-library(tidyverse)
-library(feather)
-library(bfuncs)
-library(mice)
-library(broom)
-library(modelr)
-```
+# Overview
 
-```{r load_data, include=FALSE}
-# Load data
-mids_83329 <- read_rds(path = "../data/mids_83329.rds")
-analysis_11 <- read_feather("../data/analysis_11.feather")
-```
+In this file, we start with the multiply imputed baseline data for all women who were sexually active in the previous year. We then use logistic regression to model the relationship between abuse and sexual satisfaction. From EK 2017-07-17: 
 
-```{r}
-about_data(analysis_11) # 916,619 observations and 59 variables
-```
-
-
-From Erika 2017-07-17: 
-
-## Step 2: Compute odds of sexual satisfaction (Table 2). 
+**Compute odds of sexual satisfaction (Table 2).**
 
 Conduct adjusted models to examine cross-sectional odds of sexual satisfaction (Global/frequency), with sequential modeling as described below. Use multiple imputation to account for the missingness of chronic disease information. Sequential modeling as follows:
 
 **Model 1 (Sociodemographics):**   
+
 * Age   
 * Race & Ethnicity   
 * Education   
@@ -44,6 +29,7 @@ Conduct adjusted models to examine cross-sectional odds of sexual satisfaction (
 * WHI study component   
 	
 **Model 2 (Health/health risk factors + Model 1):**   
+
 * All Model 1 variables   
 * Pack years of smoking   
 * Body mass index (BMI)   
@@ -59,7 +45,8 @@ Conduct adjusted models to examine cross-sectional odds of sexual satisfaction (
 * Depressive symptoms   
 * Current use of SSRI   
 
-**Model 3 (Menopausal symptoms/treatment variables that impact menopausal + Model 1 +Model 2):**   
+**Model 3 (Menopausal symptoms/treatment variables that impact menopausal + Model 1 +Model 2):**  
+
 * All Model 1 variables   
 * All Model 2 variables   
 * Night sweats   
@@ -67,25 +54,61 @@ Conduct adjusted models to examine cross-sectional odds of sexual satisfaction (
 * Vaginal dryness   
 * Current use of female hormone therapy   
 
-### Let's explore the variable distributions by imputation status
+# Table of contents
+
+1. [Exploratory data analysis](#eda)
+2. [Unadjusted model dissatisfaction](#unadjusted-sat)
+3. [Unadjusted model frequency dissatisfaction](#unadjusted-freq-sat)
+
+```{r load_packages,include=FALSE}
+Sys.setenv(TZ = "US/Central")
+library(tidyverse)
+library(feather)
+library(bfuncs)
+library(mice)
+library(broom)
+library(modelr)
+```
+
+```{r load_data, include=FALSE}
+mids_interaction <- read_rds(path = "../data/mids_interaction.rds")
+analysis_11_interaction <- read_feather("../data/analysis_11_interaction.feather")
+```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Exploratory data analysis {#eda}
+
+-------------------------------------------------------------------------------
+
+```{r}
+about_data(analysis_11_interaction) # 916,619 observations and 62 variables
+```
 
 What does the distribution of satisfied by abuse look like?
 
 ```{r}
-analysis_11 %>% 
+analysis_11_interaction %>% 
   filter(!.imp == 0) %>% 
   group_by(abuse, satisfied_f) %>% 
   freq_table() %>% 
-  select(1:3, percent_row, lcl_row_log, ucl_row_log) %>% 
-  filter(satisfied_f == "Yes")
+  filter(col_cat == "Yes") # satisfied_f
 ```
 
 ```{r}
-analysis_11 %>% 
+analysis_11_interaction %>% 
   filter(!.imp == 0) %>%
   group_by(abuse, freq_satisfied_f) %>% 
   freq_table() %>% 
-  select(1:3, percent_row, lcl_row_log, ucl_row_log)
+  filter(col_cat == "Yes") # freq_satisfied_f
 ```
 
 ## Using mice::with with return a Multiply imputed repeated analyses (MIRA) object
@@ -115,8 +138,9 @@ tidy_output <- function(x, ...) {
 
 
 
+-------------------------------------------------------------------------------
 
-## Unadjusted model dissatisfaction
+# Unadjusted model dissatisfaction {#unadjusted-sat}
 
 -------------------------------------------------------------------------------
 
@@ -252,13 +276,14 @@ m3_dissat_pool %>% tidy_output()
 
 
 
+-------------------------------------------------------------------------------
 
-## Unadjusted model frequency dissatisfaction
+## Unadjusted model frequency dissatisfaction {##unadjusted-freq-sat}
 
 -------------------------------------------------------------------------------
 
 ```{r}
-unadj_freq_dissat <- with(mids_83329, 
+unadj_freq_dissat <- with(mids_interaction, 
   glm(
     freq_dissatisfied ~ abuse,
     family = binomial(link = "logit")

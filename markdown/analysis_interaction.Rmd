@@ -1,0 +1,213 @@
+---
+title: "Check for age by abuse interaction"
+date: "Created: 2018-01-15 <br> Updated: `r Sys.Date()`"
+output: html_notebook
+---
+
+<style>
+  hr {
+    background-color: #66b3ff;
+    height: 1px;
+  }
+</style>
+
+# Overview
+
+In this file, we start with the multiply imputed baseline data for all women who were sexually active in the previous year. We are checking to see if there is the effect of abuse differs by age.
+
+Check:    
+1. Raw data - no interaction   
+2. Raw data - interaction - age*abuse   
+3. Raw data - interaction - age_c*abuse    
+4. Mids_83329 - no interaction   
+5. Mids_83329 - interaction   
+6. Mids_interaction - no interaction   
+7. Mids_interaction - interaction - age*abuse    
+8. Mids_interaction - interaction - age_c*abuse    
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+Sys.setenv(TZ = "US/Central")
+```
+
+```{r load_packages, message=FALSE}
+library(tidyverse)
+library(feather)
+library(bfuncs)
+library(mice)
+library(broom)
+library(modelr)
+```
+
+```{r load_data, include=FALSE}
+baseline_only <- read_feather("../data/baseline_only.feather")
+mids_interaction <- read_rds(path = "../data/mids_interaction.rds")
+mids_83329 <- read_rds(path = "../data/mids_83329.rds")
+analysis_11_interaction <- read_feather("../data/analysis_11_interaction.feather")
+```
+
+Data management
+
+```{r}
+baseline_only <- baseline_only %>% 
+  mutate(
+    abuse = case_when(
+      abuse4cat_f == "Did not experience abuse" ~ 0,
+      abuse4cat_f == "Verbal abuse only" ~ 1,
+      abuse4cat_f == "Physical abuse only" ~ 1,
+      abuse4cat_f == "Physical and verbal abuse" ~ 1
+    ),
+    satisfied = if_else(satisfied_f == "Yes", 1L, 0L, NA_integer_),
+    dissatisfied = if_else(satisfied == 1, 0L, 1L, NA_integer_),
+    age_c = age - 60
+  )
+```
+
+Helper functions
+
+```{r}
+tidy_glm <- function(x, ...) {
+ out <- tidy(x)
+ ci  <- confint(x) %>% exp() %>% as.data.frame()
+ out <- bind_cols(out, ci)
+ out <- out %>%
+   mutate(
+     estimate = exp(estimate),
+     p_value = round(p.value, 10) %>% format(nsmall = 6L)
+   ) %>% 
+   select(-p.value)
+ out
+}
+
+tidy_output_mids <- function(x, ...) {
+  x %>% 
+    summary() %>% 
+    tidy() %>% 
+    mutate(
+    est = exp(est) %>% round(2) %>% format(nsmall = 2L),
+    lo.95 = exp(lo.95) %>% round(2) %>% format(nsmall = 2L),
+    hi.95 = exp(hi.95) %>% round(2) %>% format(nsmall = 2L),
+    p_value = round(`Pr...t..`, 10) %>% format(nsmall = 6L),
+    or_95 = paste0(est, " (", lo.95, " - ", hi.95, ")")
+  ) %>% 
+  select(.rownames, est, lo.95, hi.95, or_95, p_value)
+}
+```
+
+# 1. Raw data - no interaction
+
+```{r message=FALSE}
+glm(dissatisfied ~ abuse + age, data = baseline_only) %>% 
+  tidy_glm()
+```
+
+# 2. Raw data - interaction - age*abuse   
+
+```{r message=FALSE}
+glm(dissatisfied ~ abuse*age, data = baseline_only) %>% 
+  tidy_glm()
+```
+
+# 3. Raw data - interaction - age_c*abuse  
+
+```{r message=FALSE}
+glm(dissatisfied ~ abuse*age_c, data = baseline_only) %>% 
+  tidy_glm()
+```
+
+# 4. Mids_83329 - no interaction   
+
+```{r}
+m4 <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse + age,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m4_pool <- pool(m4)
+m4_pool %>% tidy_output_mids()
+```
+
+# 5. Mids_83329 - interaction   
+
+```{r}
+m5 <- with(mids_83329, 
+  glm(
+    dissatisfied ~ abuse*age,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m5_pool <- pool(m5)
+m5_pool %>% tidy_output_mids()
+```
+
+# 6. Mids_interaction - no interaction 
+
+```{r}
+m6 <- with(mids_interaction, 
+  glm(
+    dissatisfied ~ abuse + age,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m6_pool <- pool(m6)
+m6_pool %>% tidy_output_mids()
+```
+
+# 7. Mids_interaction - interaction - age*abuse  
+
+```{r}
+m7 <- with(mids_interaction, 
+  glm(
+    dissatisfied ~ abuse*age,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m7_pool <- pool(m7)
+m7_pool %>% tidy_output_mids()
+```
+
+# 8. Mids_interaction - interaction - age_c*abuse 
+
+```{r}
+stacked <- complete(mids_interaction, action = "long", include = TRUE)
+```
+
+```{r}
+stacked <- stacked %>% 
+  mutate(age_c = age - 60)
+```
+
+```{r}
+mids_interaction_age_c <- as.mids(stacked)
+```
+
+```{r}
+m8 <- with(mids_interaction_age_c, 
+  glm(
+    dissatisfied ~ abuse*age_c,
+    family = binomial(link = "logit")
+  )
+)
+```
+
+```{r}
+m8_pool <- pool(m8)
+m8_pool %>% tidy_output_mids()
+```
+
+```{r echo=FALSE}
+sessionInfo()
+```

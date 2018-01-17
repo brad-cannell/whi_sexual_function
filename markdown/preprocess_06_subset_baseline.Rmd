@@ -1,16 +1,36 @@
 ---
 title: "Preprocess 06: Subset Baseline Data"
 date: "Created: 2017-07-17 <br> Updated:`r Sys.Date()`"
-output: 
-  github_document: default
-description: Fill this out when done.
+output: html_notebook
 ---
 
+<style>
+  hr {
+    background-color: #66b3ff;
+    height: 1px;
+  }
+</style>
+
+# Overview
+
+In this file, we reduce the data to one row per woman (baseline) and to only the variables of interest for our final analysis. 
+
+* Baseline is either each woman's first response to an abuse question or day 0 if she never responded to either abuse question.
+
+This file also serves to **participant flow diagram** used in the manuscript.
+
+# Table of contents
+
+1. [Subset baseline](#subset-baseline)   
+2. [Missing sexual activity](#missing-sexual-activity)    
+3. [Missing abuse](#missing-abuse)   
+4. [Variable management](#variable-management)   
+5. [Save progress](#save-progress)   
+
 ```{r load_packages, message=FALSE}
-# Load packages
-library(feather)
+Sys.setenv(TZ = "US/Central")
 library(tidyverse)
-library(data.table)
+library(feather)
 library(bfuncs)
 library(mice)
 ```
@@ -55,37 +75,86 @@ library(mice)
 Currently, all 161,808 women are still represented in the data.
 
 ```{r load_analysis_09}
-# Load data
 analysis_09 <- read_feather("../data/analysis_09.feather")
 about_data(analysis_09) # 1,432,448 observations and 134 variables
 ```
 
-```{r}
-dt <- as.data.table(analysis_09)
-```
 
-# Tag baseline observations
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Subset baseline
+
+-------------------------------------------------------------------------------
+
+## Tag baseline observations
 
 Baseline is either each woman's first response to an abuse question or day 0 if she never responded to either abuse question.
 
-```{r tag_baseline}
-dt[first_ab_obs == TRUE, baseline := TRUE]
-dt[abuse_ever == -3 & days == 0, baseline := TRUE]
+* first_ab_obs was created in preprocess_03_abuse.Rmd. It is a dummy variable that represent the first time that there is a non-missing value for the physical abuse question or the verbal abuse question.
+
+* abuse_ever was created in preprocess_03_abuse.Rmd. abuse_ever == -3 means that the current woman never had a non-missing value for the physical abuse question or the verbal abuse question at any point during follow-up.
+
+```{r}
+baseline <- analysis_09 %>% 
+  mutate(
+    baseline = case_when(
+      first_ab_obs == TRUE         ~ 1L, # First observed value for abuse
+      abuse_ever == -3 & days == 0 ~ 1L, # Day 0, if never observed value for abuse
+      TRUE                         ~ 0L  # Otherwise, not baseline row
+    )
+  )
+
+about_data(baseline) # 1,432,448 observations and 136 variables
 ```
 
-# Subset the variables of interest
+Count baseline observations
+
+```{r}
+baseline %>% group_by(baseline) %>% freq_table()
+```
+
+As expected, there are 161,808 baseline rows.
+
+## Keep baseline observations only
+
+```{r}
+baseline_only <- baseline %>% 
+  filter(baseline == 1)
+
+about_data(baseline_only) # 161,808 observations and 136 variables
+```
+
+## What is the distribution of CT/OS for flow diagram?
+
+```{r}
+baseline_only %>% 
+  group_by(ctos_f) %>% 
+  freq_table()
+```
+
+## Subset the variables of interest
 
 2017-06-26: Added hypertension
 
 ```{r subset_vars_of_interest}
-dt <- dt[, .(id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f,
-             age, age_group_f, race_eth_f, edu4cat_f, edu2cat_f, inc5cat_f, married_f, ctos_f, 
-             packyrs, bmi, bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, 
-             diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, first_nightswt, 
-             hot_flashes_f, night_sweats_f, vag_dry_f, hormnw_f, sex, baseline)]
-about_data(dt) # 1,432,448 observations and 38 variables
-```
+baseline_only <- baseline_only %>% 
+  select(
+    id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f,
+    age, age_group_f, race_eth_f, edu4cat_f, edu2cat_f, inc5cat_f, married_f, ctos_f, 
+    packyrs, bmi, bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, 
+    diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, first_nightswt, 
+    hot_flashes_f, night_sweats_f, vag_dry_f, hormnw_f, sex, baseline
+  )
 
+about_data(baseline_only) # 161,808 observations and 38 variables
+```
 
 
 
@@ -101,69 +170,53 @@ about_data(dt) # 1,432,448 observations and 38 variables
 
 -------------------------------------------------------------------------------
 
+There are two relevant questions here.
+
+* From [form 37](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf) and [form 38](https://www.whi.org/researchers/data/WhiDataDict/f38_ctos_fu_inv.pdf): Did you have any sexual activity with a partner in the last year?
+
+* From [form 37](https://www.whi.org/researchers/data/WhiDataDict/f37_ctos_inv.pdf): Regardless of whether you are currently sexually active, which response best describes who you have had sex with over your adult lifetime?
+
 Remove women who say they haven't had sex in the past year and women who say that they have never had sex. Additionally, I need to remove women who are missing this information. I can't just impute a value because I am sub-setting (dropping women who were not sexually active in the past year) based on this variable, as opposed to modeling. Imputing will potentially give me different values for sexual activity in the past year within woman.
 
-Decided to just use listwise deletion for sexual activity.
-
-How many are missing sexual activity at baseline?
-
-```{r sexactive_freq}
-dt[baseline == 1][order(sexactiv_f)][, .(Women = .N), by = sexactiv_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
+```{r rows.print=18}
+baseline_only %>% 
+  group_by(sexactiv_f, sex) %>% 
+  freq_table()
 ```
 
-About 4% missing sexual activity at baseline, and another 71,239 reported no sexual activity.
+There are 73 women who report never having sex and having sex in the past year. To be conservative, we will drop these women.
 
 ```{r}
-71239 + 7167 # 78,406 women have no or NA for sexactive_f at baseline.
-```
-
-All rows for all 78,406 women that did not report being sexually active in the previous year will be dropped from the data.
-
-```{r keep_sexactive}
-# Gather id's with Yes for sexactiv_f at baseline.
-keep_ids <- dt[baseline == 1 & sexactiv_f == "Yes", id]
-
-# Keep rows for sexually active women
-dt <- dt[id %in% keep_ids]
-count_ids(dt$id) # 83,402 unique women
-```
-
-How many women report "never having sex" on the sexual orientation question
-
-```{r}
-dt <- dt %>%
+had_sex <- baseline %>% 
   mutate(
-    sex_f = factor(sex, levels = c(1, 2, 3, 4, 9), 
-                   labels = c("Have never had sex", "Sex with a woman or with women", 
-                              "Sex with a man or with men", "Sex with both men and women",
-                              "Prefer not to answer")
+    had_sex = case_when(
+      sexactiv_f == "No" | sex == 1 ~ FALSE,
+      sexactiv_f == "Yes"           ~ TRUE,
+      TRUE                          ~ NA
     )
-  ) %>% 
-  as.data.table()
-```
+  )
 
-```{r never_had_sex}
-dt[, length(unique(id)), by = sex_f]
-```
-
-```{r drop_never_sex}
-drop_ids <- dt[baseline == 1 & sex_f == "Have never had sex", id]
-drop_ids <- which(dt$id %in% drop_ids)
-dt <- dt[-drop_ids]
-count_ids(dt$id) # 83,329 unique women
+had_sex %>% 
+  group_by(had_sex) %>% 
+  freq_table()
 ```
 
 ```{r}
-about_data(dt) # 744,745 observations and 39 variables
+71371 + 7108
 ```
 
 ```{r}
-# Clean up
-rm(keep_ids, drop_ids)
+had_sex <- had_sex %>% filter(had_sex)
+about_data(had_sex) # 83,329 observations and 136 variables
 ```
 
-At this point, the data contains 744,745 observations for 83,329 unique women. 78,406 women were removed from the analysis because they either reported no sexual activity in the previous 12 months, or because they were missing a value for sexual activity in the past 12 months (~4%).
+```{r}
+had_sex %>% 
+  group_by(ctos_f) %>% 
+  freq_table()
+```
+
+71,371 reported not having sex in the past year and the status of past year sexual activity could not be determined for 7,108. Those 78,479 women were excluded from the data -- **leaving 83,329 women remaining for analysis.** 
 
 
 
@@ -175,7 +228,7 @@ At this point, the data contains 744,745 observations for 83,329 unique women. 7
 
 -------------------------------------------------------------------------------
 
-# Missing abuse and sexual satisfaction
+# Missing abuse
 
 -------------------------------------------------------------------------------
 
@@ -185,41 +238,34 @@ For abuse, we will impute the 4-level abuse variable, and then recode to the 2-l
 
 ## How many women are missing 4-level abuse at baseline?
 
-```{r abuse4cat_freq}
-dt[baseline == 1][order(abuse4cat_f)][, .(Women = .N), by = abuse4cat_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
+```{r}
+had_sex %>% 
+  group_by(abuse4cat_f) %>% 
+  freq_table()
+```
+
+```{r}
+had_sex %>% 
+  group_by(abuse_d_f) %>% 
+  freq_table()
 ```
 
 Of the 83,329 women that reported sexual activity in the past year, 2 never answered either abuse question and 182 women's abuse status could not be determined from their answers. The abuse status (4-level) can be determined for over 99% of the 83,329 women who reported sexual activity in the past year.
 
-## How many women are missing sexual satisfaction at baseline?
+Note that if we use any abuse vs. no abuse instead of the 4-category abuse variable, then there are fewer missing (160). However, because we want the ability to investigate the importance of the 4 category levels in subsequent analyses, and we are imputing values anyway, we will use the count of missing values from abuse4cat_f in the **participant flow diagram**.
 
-```{r satisfied_freq}
-dt[baseline == 1][order(satisfied_f)][, .(Women = .N), by = satisfied_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
+### 2018-01-17 update
 
-## How many women are missing sexual frequency satisfaction at baseline?
+After conducting MI and fitting the regression models to the data, we decided to use the 2-level abuse variable as our exposure. Therefore, we will now use the count of missing values from abuse_d_f (**160**) in the **participant flow diagram**.
 
-```{r freq_satisfied_freq}
-dt[baseline == 1][order(freq_satisfied_f)][, .(Women = .N), by = freq_satisfied_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-Only 4% of women are missing sexual satisfaction at baseline, and only 5% of women are missing sexual frequency satisfaction at baseline. At some point, we may want to come back and impute sexual satisfaction and sexual frequency satisfaction longitudinally. For now, we will impute them from other variables in the data set.
-
-## How many women are missing sexual satisfaction OR sexual frequency satisfaction at baseline?
+## Overview of data for Table 1 - for participant flow chart
 
 ```{r}
-dt[baseline == 1, 
-   .(missing_sexual = if_else(is.na(satisfied_f) | is.na(freq_satisfied_f), 1, 0))][,
-     .(count = .N), by = missing_sexual][, cumsum := cumsum(count)][,
-       percent := count / max(cumsum) * 100][]
+had_sex %>% 
+  filter(abuse_d_f == "No" | abuse_d_f == "Yes") %>% 
+  group_by(ctos) %>% 
+  freq_table()
 ```
-
-So, 4,758 women (~6%) who were sexually active in the past year were missing a baseline response to the question about sexual satisfaction OR they were missing a baseline response to the question about sexual frequency satisfaction.
-
-We will impute these missing values.
 
 
 
@@ -231,14 +277,14 @@ We will impute these missing values.
 
 -------------------------------------------------------------------------------
 
-# A little more data preparation
+# Variable management
 
 -------------------------------------------------------------------------------
 
-Keep only variables of interest (for analysis or MI) in dt
+Keep only variables of interest (for analysis or MI) 
 
 ```{r}
-dt <- dt %>%
+baseline_only <- had_sex %>%
   select(
     # Administrative variables
     # Calling CTOS administrative. There is no difference in satisfaction by CTOS
@@ -263,15 +309,6 @@ dt <- dt %>%
     night_sweats_f, hot_flashes_f, vag_dry_f, hormnw_f
   )
 
-about_data(dt) # 744,745 observations and 29 variables
-```
-
-## Subset baseline only
-
-Again, baseline is either each woman's first response to an abuse question or day 0 if she never responded to either abuse question.
-
-```{r}
-baseline_only <- dt[baseline == 1]
 about_data(baseline_only) # 83,329 observations and 29 variables
 ```
 
@@ -316,8 +353,22 @@ about_data(baseline_only) # 83,329 observations and 53 variables
 Clean up
 
 ```{r}
-rm(analysis_09, dt, ini, var, var_name, vars_w_missing)
+rm(analysis_09, baseline, had_sex, ini, var, var_name, vars_w_missing)
 ```
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Save progress
+
+-------------------------------------------------------------------------------
 
 ## Save baseline_only as feather
 
@@ -327,211 +378,10 @@ For multiple imputation
 write_feather(baseline_only, "../data/baseline_only.feather")
 ```
 
-## Export as csv for MI in SAS
+## Export as csv
 
 ```{r}
-writexl::write_xlsx(baseline_only, "../data/baseline_only.xlsx")
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Old below here. Don't delete quite yet...
-
-
-
-
-
--------------------------------------------------------------------------------
-
-# Missing abuse
-
--------------------------------------------------------------------------------
-
-How many women are missing abuse (2-level) at baseline?
-
-```{r abuse2cat_freq}
-dt[baseline == 1][order(abuse_d_f)][, .(Women = .N), by = abuse_d_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-Of the 83,402 women that reported sexual activity in the past year, 2 never answered either abuse question and 158 women's abuse status could not be determined from their answers. The abuse status (2-level) can be determined for over 99% of the 83,402 women who reported sexual activity in the past year.
-
-How many women are missing abuse (4-level) at baseline?
-
-```{r abuse4cat_freq}
-dt[baseline == 1][order(abuse4cat_f)][, .(Women = .N), by = abuse4cat_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-Of the 83,402 women that reported sexual activity in the past year, 2 never answered either abuse question and 182 women's abuse status could not be determined from their answers. The abuse status (4-level) can be determined for over 99% of the 83,402 women who reported sexual activity in the past year.
-
-We will drop observations from the 182 women who's abuse status at baseline was missing or could not be determined from their responses.
-
-```{r check_abuse2cat}
-# Set alternate codings for missing to NA
-dt[, abuse_d_f := if_else(abuse_d_f %in% c("No", "Yes"), abuse_d_f, NA_integer_)]
-dt[baseline == 1][order(abuse_d_f)][, .(Women = .N), by = abuse_d_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-```{r check_abuse4cat}
-# Set alternate codings for missing to NA
-keep <- c("Physical and verbal abuse", "Physical abuse only", "Verbal abuse only", "Did not experience abuse")
-dt[, abuse4cat_f := if_else(abuse4cat_f %in% keep, abuse4cat_f, NA_integer_)]
-dt[baseline == 1][order(abuse4cat_f)][, .(Women = .N), by = abuse4cat_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-```{r keep_with_abuse}
-# Gather id's without NA for abuse4cat_f at baseline.
-ids <- dt[baseline == 1 & !is.na(abuse4cat_f), id]
-
-# Keep rows with non-missing abuse4cat
-dt <- dt[id %in% ids]
-count_ids(dt$id) # 83,145 unique women
-```
-
-```{r}
-83329 - 83145 # 184
-```
-
-184 women were dropped from the data because their abuse status (4-level) could not be determined.
-
-```{r}
-check_data(dt) # 743,094 observations and 39 variables
-```
-
-```{r}
-# Clean up
-rm(keep, ids)
-```
-
-
-
-
-
-
-
-
-
--------------------------------------------------------------------------------
-
-# Missing sexual satisfaction
-
--------------------------------------------------------------------------------
-
-How many women are missing sexual satisfaction at baseline?
-
-```{r satisfied_freq}
-dt[baseline == 1][order(satisfied_f)][, .(Women = .N), by = satisfied_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-How many women are missing sexual frequency satisfaction at baseline?
-
-```{r freq_satisfied_freq}
-dt[baseline == 1][order(freq_satisfied_f)][, .(Women = .N), by = freq_satisfied_f][, Cumsum := cumsum(Women)][
-  , Percent := Women / max(Cumsum) * 100][]
-```
-
-Only 4% of women are missing sexual satisfaction at baseline, and only 5% of women are missing sexual frequency satisfaction at baseline. At some point, we may want to come back and impute sexual satisfaction and sexual frequency satisfaction longitudinally. For now, we will impute them from other variables in the data set.
-
-Save progress
-
-```{r save_analysis_10}
-analysis_10 <- as_tibble(dt)
-write_feather(analysis_10, path = "../data/analysis_10.feather")
-```
-
-
-
-
-
-
-
-
-
-
--------------------------------------------------------------------------------
-
-# Create data subsets for Table 1 (prior to multiple imputation)
-
--------------------------------------------------------------------------------
-
-```{r load_analysis_10}
-# Load data
-analysis_10 <- read_feather("../data/analysis_10.feather")
-check_data(analysis_10) # 743,094 observations and 39 variables
-```
-
-```{r}
-count_ids(analysis_10$id) # 83,145 unique women
-```
-
-```{r}
-dt <- as.data.table(analysis_10)
-```
-&nbsp;
-
-Currently, the data includes information from 83,218 unique women. All women reported sexual activity in the past year. Additionally, each woman's abuse status can be determined.
-
-## Subset baseline observations only
-
-```{r subset_baseline_only}
-baseline_only <- dt %>% filter(baseline == TRUE)
-
-# Drop the baseline variable
-baseline_only$baseline <- NULL
-
-check_data(baseline_only) # 83,145 observations and 38 variables
-```
-
-## Create subgroups for Table 1 (no, any, verbal only, phys only, both)
-
-```{r subset_abuse_groups}
-no_abuse            <- baseline_only %>% filter(abuse_d_f == "No")
-any_abuse           <- baseline_only %>% filter(abuse_d_f == "Yes")
-verbal_only         <- baseline_only %>% filter(abuse4cat_f == "Verbal abuse only")
-physical_only       <- baseline_only %>% filter(abuse4cat_f == "Physical abuse only")
-verbal_and_physical <- baseline_only %>% filter(abuse4cat_f == "Physical and verbal abuse")
-
-# Count total observations
-nrow(no_abuse) + nrow(verbal_only) + nrow(physical_only) + nrow(verbal_and_physical) # 83145
-```
-
-### Data check: group sizes
-
-```{r data_check_group_sizes, echo=FALSE}
-cat("No abuse:", nrow(no_abuse), "\n") # 73,759 
-cat("Any abuse:", nrow(any_abuse), "\n") # 9,386
-cat("No + Any:", nrow(no_abuse) + nrow(any_abuse), "\n") # 83,145 
-
-cat("Verbal only:", nrow(verbal_only), "\n") # 8,374 
-cat("Physical only:", nrow(physical_only), "\n") # 188
-cat("Both:", nrow(verbal_and_physical), "\n") # 824
-cat("Total:", nrow(no_abuse) + nrow(verbal_only) + nrow(physical_only) + nrow(verbal_and_physical), "\n") # 83,145
-```
-
-## Save subgroup data for Table 1
-
-```{r save_subgroups_for_table_1}
-write_feather(baseline_only, path = "../data/baseline_only.feather")
-write_feather(no_abuse, path = "../data/no_abuse.feather")
-write_feather(any_abuse, path = "../data/any_abuse.feather")
-write_feather(verbal_only, path = "../data/verbal_only.feather")
-write_feather(physical_only, path = "../data/physical_only.feather")
-write_feather(verbal_and_physical, path = "../data/verbal_and_physical.feather")
+readr::write_csv(baseline_only, "../data/baseline_only.csv")
 ```
 
 ```{r session_info, echo=FALSE}

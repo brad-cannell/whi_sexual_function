@@ -187,7 +187,7 @@ baseline_only %>%
 There are 73 women who report never having sex and having sex in the past year. To be conservative, we will drop these women.
 
 ```{r}
-had_sex <- baseline %>% 
+had_sex <- baseline_only %>% 
   mutate(
     had_sex = case_when(
       sexactiv_f == "No" | sex == 1 ~ FALSE,
@@ -263,7 +263,7 @@ After conducting MI and fitting the regression models to the data, we decided to
 ```{r}
 had_sex %>% 
   filter(abuse_d_f == "No" | abuse_d_f == "Yes") %>% 
-  group_by(ctos) %>% 
+  group_by(ctos_f) %>% 
   freq_table()
 ```
 
@@ -281,10 +281,17 @@ had_sex %>%
 
 -------------------------------------------------------------------------------
 
-Keep only variables of interest (for analysis or MI) 
+## Basline only data for Table 1
 
 ```{r}
-baseline_only <- had_sex %>%
+baseline_only <- had_sex
+about_data(baseline_only) # 83,329 observations and 39 variables
+```
+
+## Baseline only data for multiple imputation and modeling
+
+```{r}
+baseline_only_mi <- had_sex %>%
   select(
     # Administrative variables
     # Calling CTOS administrative. There is no difference in satisfaction by CTOS
@@ -309,7 +316,7 @@ baseline_only <- had_sex %>%
     night_sweats_f, hot_flashes_f, vag_dry_f, hormnw_f
   )
 
-about_data(baseline_only) # 83,329 observations and 29 variables
+about_data(baseline_only_mi) # 83,329 observations and 29 variables
 ```
 
 ## Recode abuse4cat to NA
@@ -317,8 +324,8 @@ about_data(baseline_only) # 83,329 observations and 29 variables
 I also, need to recode indicator values for different kinds of missing for abuse4cat_f to NA
 
 ```{r}
-baseline_only$abuse4cat_f <- recode_factor(
-  baseline_only$abuse4cat_f, 
+baseline_only_mi$abuse4cat_f <- recode_factor(
+  baseline_only_mi$abuse4cat_f, 
   "Can't determine V no P" = NA_character_,
   "Can't determine P no V" = NA_character_,
   "Abuse not measured" = NA_character_
@@ -328,7 +335,7 @@ baseline_only$abuse4cat_f <- recode_factor(
 ## Create imputation flags
 
 ```{r}
-ini <- mice(baseline_only, m = 0, maxit = 0)
+ini <- mice(baseline_only_mi, m = 0, maxit = 0)
 
 # For imputation flags, only need vars with any missing data.
 vars_w_missing <- ini$nmis[ini$nmis > 0]
@@ -342,12 +349,12 @@ For each member of vars_w_missing create a impute_ flag variable
 ```{r}
 for (var in vars_w_missing) {
   var_name <- paste0("impute_", var)
-  baseline_only[[var_name]] <- if_else(is.na(baseline_only[[var]]), 1, 0)
+  baseline_only_mi[[var_name]] <- if_else(is.na(baseline_only_mi[[var]]), 1, 0)
 }
 
 # names(baseline_only)
 # baseline_only %>% select(id, diab_f, impute_diab_f)
-about_data(baseline_only) # 83,329 observations and 53 variables
+about_data(baseline_only_mi) # 83,329 observations and 53 variables
 ```
 
 Clean up
@@ -370,18 +377,20 @@ rm(analysis_09, baseline, had_sex, ini, var, var_name, vars_w_missing)
 
 -------------------------------------------------------------------------------
 
-## Save baseline_only as feather
-
-For multiple imputation
+## Save feather files
 
 ```{r}
 write_feather(baseline_only, "../data/baseline_only.feather")
 ```
 
+```{r}
+write_feather(baseline_only_mi, "../data/baseline_only_mi.feather")
+```
+
 ## Export as csv
 
 ```{r}
-readr::write_csv(baseline_only, "../data/baseline_only.csv")
+readr::write_csv(baseline_only_mi, "../data/baseline_only_mi.csv")
 ```
 
 ```{r session_info, echo=FALSE}

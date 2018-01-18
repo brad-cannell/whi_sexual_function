@@ -76,7 +76,7 @@ Currently, all 161,808 women are still represented in the data.
 
 ```{r load_analysis_09}
 analysis_09 <- read_feather("../data/analysis_09.feather")
-about_data(analysis_09) # 1,432,448 observations and 134 variables
+about_data(analysis_09) # 1,432,448 observations and 136 variables
 ```
 
 
@@ -111,7 +111,7 @@ baseline <- analysis_09 %>%
     )
   )
 
-about_data(baseline) # 1,432,448 observations and 136 variables
+about_data(baseline) # 1,432,448 observations and 137 variables
 ```
 
 Count baseline observations
@@ -128,7 +128,7 @@ As expected, there are 161,808 baseline rows.
 baseline_only <- baseline %>% 
   filter(baseline == 1)
 
-about_data(baseline_only) # 161,808 observations and 136 variables
+about_data(baseline_only) # 161,808 observations and 137 variables
 ```
 
 ## What is the distribution of CT/OS for flow diagram?
@@ -142,18 +142,19 @@ baseline_only %>%
 ## Subset the variables of interest
 
 2017-06-26: Added hypertension
+2018-01-17: Added inc2cat_f
 
 ```{r subset_vars_of_interest}
 baseline_only <- baseline_only %>% 
   select(
     id, days, abuse_d_f, abuse4cat_f, sexactiv_f, satisfied_f, freq_satisfied_f, satfrqsx_f,
-    age, age_group_f, race_eth_f, edu4cat_f, edu2cat_f, inc5cat_f, married_f, ctos_f, 
+    age, age_group_f, race_eth_f, edu4cat_f, edu2cat_f, inc5cat_f, inc2cat_f, married_f, ctos_f, 
     packyrs, bmi, bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, diab_f, 
     diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, first_nightswt, 
     hot_flashes_f, night_sweats_f, vag_dry_f, hormnw_f, sex, baseline
   )
 
-about_data(baseline_only) # 161,808 observations and 38 variables
+about_data(baseline_only) # 161,808 observations and 39 variables
 ```
 
 
@@ -207,7 +208,7 @@ had_sex %>%
 
 ```{r}
 had_sex <- had_sex %>% filter(had_sex)
-about_data(had_sex) # 83,329 observations and 136 variables
+about_data(had_sex) # 83,329 observations and 40 variables
 ```
 
 ```{r}
@@ -285,7 +286,7 @@ had_sex %>%
 
 ```{r}
 baseline_only <- had_sex
-about_data(baseline_only) # 83,329 observations and 39 variables
+about_data(baseline_only) # 83,329 observations and 40 variables
 ```
 
 ## Baseline only data for multiple imputation and modeling

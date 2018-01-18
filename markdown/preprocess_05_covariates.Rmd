@@ -199,7 +199,9 @@ dt <- as.data.table(dt)
 ```{r}
 # Create factor
 dt[, race_eth_f := factor(race_eth, levels = c(1:6), 
-                          labels = c("White", "AA", "Hispanic", "Asian PI", "AI AN", "Other"))]
+                          labels = c("White", "Black or African American", 
+                                     "Hispanic/Latina", "Asian/Pacific Islander", 
+                                     "American Indian/Alaska Native", "Other"))]
 
 # Descriptives at first obs
 dt[obs == 1][order(race_eth_f), .(Women = .N), by = race_eth_f][, Cumsum := cumsum(Women)][
@@ -226,7 +228,7 @@ dt[obs == 1][order(edu4cat_f), .(Women = .N), by = edu4cat_f][, Cumsum := cumsum
 # Dichotomize Education
 dt[edu4cat_f %in% c("<HS", "HS Grad", "Some College or Tech School"), edu2cat := 0]
 dt[edu4cat_f == "College Grad", edu2cat := 1]
-dt[, edu2cat_f := factor(edu2cat, labels = c("Not Collge Grad", "College Grad"))]
+dt[, edu2cat_f := factor(edu2cat, labels = c("Not College Graduate", "College Graduate"))]
 dt[obs == 1][order(edu2cat_f), .(Women = .N), by = edu2cat_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 ```
@@ -275,6 +277,17 @@ dt[, inc5cat_f := factor(inc5cat, labels = c("20,000 or less", "20-34,999", "35-
 dt[days == 0][order(inc5cat_f), .(Women = .N), by = inc5cat_f][, Cumsum := cumsum(Women)][
   , Percent := Women / max(Cumsum) * 100][]
 # 10,874 missing match WHI documentation for missing and don't know.
+```
+
+Add two-level for Table 1
+
+```{r}
+dt[inc5cat_f %in% c("20,000 or less", "20-34,999", "35-49,999"), inc2cat := 1]
+dt[inc5cat_f %in% c("50-74,999", "75,000+"), inc2cat := 2]
+dt[, inc2cat_f := factor(inc2cat, labels = c("< $50,000", "$50,000+"))]
+
+dt[days == 0][order(inc2cat_f), .(Women = .N), by = inc2cat_f][, Cumsum := cumsum(Women)][
+  , Percent := Women / max(Cumsum) * 100][]
 ```
 
 ### Marital status

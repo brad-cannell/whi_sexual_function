@@ -1,139 +1,202 @@
 ---
-title: "Table 1. Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline (N = 83,145)"
+title: "Table 1. Sociodemographic and health history characteristics of women participating in the WHI by abuse experience at baseline (N = 83,169)"
 output:
   word_document:
     reference_docx: word_style_template_01.docx
 ---
 
 ```{r setup, include=FALSE}
-# Load packages
+Sys.setenv(TZ = "US/Central")
 library(tidyverse)
 library(feather)
-
-# Load functions
-source("../R scripts/table_1_functions.R")
+library(bfuncs)
 ```
 
-```{r load_data, include=FALSE}
-baseline_only <- read_feather(path = "../data/baseline_only.feather")
-no_abuse <- read_feather(path = "../data/no_abuse.feather")
-any_abuse <- read_feather(path = "../data/any_abuse.feather")
-verbal_only <- read_feather(path = "../data/verbal_only.feather")
-physical_only <- read_feather(path = "../data/physical_only.feather")
-verbal_and_physical <- read_feather(path = "../data/verbal_and_physical.feather")
+```{r echo=FALSE}
+baseline_only <- read_feather("../data/baseline_only.feather")
+
+# Recode abuse_d_f to missing
+baseline_only <- baseline_only %>% 
+  mutate(
+    abuse_d_f = fct_recode(abuse_d_f, NULL = "Abuse not measured", 
+                           NULL = "Answered phyab, but not verbab",
+                           NULL = "Answered verbab, but not phyab")
+  ) %>% 
+  filter(!is.na(abuse_d_f)) #83,169
 ```
 
-<!-- Group N's -->
-
-```{r Ns, include=FALSE}
-# Add n's to table
-table_01 <- tibble(
+```{r echo=FALSE}
+# Create the table shell
+# ---------------------
+table <- tibble(
   variable = "",
   class = "",
-  no_abuse = get_n(no_abuse) %>% as.character(),
-  any_abuse = get_n(any_abuse) %>% as.character(),
-  verbal_only = get_n(verbal_only) %>% as.character(),
-  physical_only = get_n(physical_only) %>% as.character(),
-  verbal_and_physical = get_n(verbal_and_physical) %>% as.character()
+  no_abuse = baseline_only %>% get_group_n(abuse_d_f == "No"),
+  any_abuse = baseline_only %>% get_group_n(abuse_d_f == "Yes")
 )
+
+# Select data frame
+# -----------------
+df <- baseline_only
+
+# Select group variable (columns)
+# -------------------------------
+group <- quo(abuse_d_f)
+
+# Select variables (in order of appearance)
+# -----------------------------------------
+vars <- quos(age_group_f, race_eth_f, edu2cat_f, inc2cat_f, married_f, packyrs, 
+             bmi4cat_f, hyst_f, incont_f, hypt_f, cvd_f, arthrit_f, 
+             diab_combined_f, canc_f, hip55_f, good_health_f, pshtdep, ssri_f, 
+             night_sweats_f, hot_flashes_f, vag_dry_f, hormnw_f, ctos_f)
+
+
+# Build table
+# -----------
+for (i in seq_along(vars)) {
+  
+  # Figure out what type of variable it is
+  class_var_i <- df %>% 
+    pull(!! vars[[i]]) %>% 
+    class()
+  
+  # If it's a categorical (character/factor) variable:
+  # Calculate percent and 95% CI
+  # Then, add that row to the table
+  if (class_var_i == "character" || class_var_i == "factor") {
+    
+    row <- df %>% 
+      filter(!(is.na(!! vars[[i]]))) %>% # filter out missing
+      group_by(!! group, !! vars[[i]]) %>% 
+      freq_table() %>% 
+      format_table(stats = "n and row percent") %>% 
+      spread(key = row_cat, value = n_percent_row) %>% 
+      select(-row_var) %>% 
+      rename(variable = col_var, class = col_cat, no_abuse = No, any_abuse = Yes) %>% 
+      mutate(class = as.character(class)) # Need for bind_rows below
+    
+    # Append a blank row before each categorical variable
+    # later this will create space to slide class levels over
+    blank_row <- tibble(
+      variable   = !! quo_name(vars[[i]]),
+      class      = "",
+      no_abuse = "",
+      any_abuse    = ""
+    )
+
+    # Append to bottom of table
+    table <- bind_rows(table, blank_row, row)
+    
+  # If it's a continuous variable:
+  # Calculate mean and 95% CI
+  # Then, add that row to the table 
+  } else {
+    
+    row <- df %>% 
+      group_by(!!group) %>% 
+      mean_table(!!vars[[i]]) %>% 
+      format_table(stats = "n and mean") %>% 
+      spread(key = group_cat, value = n_mean) %>% 
+      select(-group_var) %>% 
+      rename(variable = response_var, no_abuse = No, any_abuse = Yes) %>% 
+      mutate(class = "")
+
+    # Append to bottom of table
+    table <- bind_rows(table, row)
+  }
+}
+
+# Clean up
+rm(blank_row, df, row, vars, class_var_i, group, i)
 ```
 
-<!-- Fill in values -->
+```{r echo=FALSE}
+# Drop some rows to make the table more succinct
+table <- table %>% 
+  filter(
+    class != "Not College Graduate",
+    class != "Not married or intimate relationship",
+    class != "No"
+  )
+```
 
-```{r create_table_01, include=FALSE}
-compare_groups <- c("no_abuse", "any_abuse", "verbal_only", "physical_only",
-  "verbal_and_physical")
 
-demo <- categorical_rows(variables = c("age_group_f", "race_eth_f", "edu2cat_f",
-  "inc5cat_f", "married_f", "ctos_f"),
-  groups = compare_groups)
-
-smoking <- continuous_rows(variables = "packyrs", groups = compare_groups)
-
-health <- categorical_rows(variables = c("bmi4cat_f", "hyst_f", "incont_f", "hypt_f", "cvd_f", 
-  "arthrit_f", "diab_combined_f", "canc_f", "hip55_f", "good_health_f"),
-  groups = compare_groups)
-
-depression <- continuous_rows(variables = "pshtdep", groups = compare_groups)
-
-menopausal <- categorical_rows(variables = c("ssri_f", "night_sweats_f", "hot_flashes_f", "vag_dry_f", 
-  "hormnw_f"),
-  groups = compare_groups)
-
-table_01 <- rbind(table_01, demo, smoking, health, depression, menopausal)
-
-# Improve readability
-table_01 <- table_01 %>%
+```{r echo=FALSE}
+# Improve table appearance - automate somehow
+table <- table %>%
   mutate(
     # Sociodemographics
     variable = if_else(variable == "age_group_f", "Age group, n (%)", variable),
     variable = if_else(variable == "race_eth_f", "Race and Ethnicity, n (%)", variable),
     variable = if_else(variable == "edu2cat_f", "Education, n (%)", variable),
-    variable = if_else(variable == "inc5cat_f", "Income, n (%)", variable),
-    variable = if_else(variable == "married_f", "Married or in an intimate relationship, n (%)", variable),
-    variable = if_else(variable == "ctos_f", "WHI study component, n (%)", variable),
+    variable = if_else(variable == "inc2cat_f", "Income, n (%)", variable),
+    variable = if_else(variable == "married_f", 
+                       "Married or in an intimate relationship, n (%)", variable),
 
     # Health/health risk factors
-    variable = if_else(variable == "packyrs", "Pack-years of Smoking, mean (sd)", variable),
+    variable = if_else(variable == "packyrs", "Pack-years of Smoking, n (mean)", variable),
     variable = if_else(variable == "bmi4cat_f", "Body Mass Index, n (%)", variable),
-    variable = if_else(variable == "hyst_f", "Hysterectomy ever, n (%)", variable),
-    variable = if_else(variable == "incont_f", "Urinary incontinence ever, n (%)", variable),
-    variable = if_else(variable == "hypt_f", "Hypertension ever, n (%)", variable),
-    variable = if_else(variable == "cvd_f", "Cardiovascular disease ever, n (%)", variable),
-    variable = if_else(variable == "arthrit_f", "Arthritis ever, n (%)", variable),
-    variable = if_else(variable == "diab_combined_f", "Diabetes ever, n (%)", variable),
-    variable = if_else(variable == "canc_f", "Cancer ever, n (%)", variable),
-    variable = if_else(variable == "hip55_f", "Hip Fracture at Age 55 or Older, n (%)", variable),
+    variable = if_else(variable == "hyst_f", "Hysterectomy ever, n (% yes)", variable),
+    variable = if_else(variable == "incont_f", "Urinary incontinence ever, n (% yes)", variable),
+    variable = if_else(variable == "hypt_f", "Hypertension ever, n (% yes)", variable),
+    variable = if_else(variable == "cvd_f", "Cardiovascular disease ever, n (% yes)", variable),
+    variable = if_else(variable == "arthrit_f", "Arthritis ever, n (% yes)", variable),
+    variable = if_else(variable == "diab_combined_f", "Diabetes ever, n (% yes)", variable),
+    variable = if_else(variable == "canc_f", "Cancer ever, n (% yes)", variable),
+    variable = if_else(variable == "hip55_f", "Hip Fracture at Age 55 or Older, n (% yes)", variable),
     variable = if_else(variable == "good_health_f", "Good or better health, n (%)", variable),
-    variable = if_else(variable == "pshtdep", "Shortened CES-D/DIS, mean (sd)", variable),
-    variable = if_else(variable == "ssri_f", "Current use of SSRI, n (%)", variable),
+    variable = if_else(variable == "pshtdep", "Shortened CES-D/DIS, n (mean)", variable),
+    variable = if_else(variable == "ssri_f", "Current use of SSRI, n (% yes)", variable),
 
     # Menopausal symptoms/treatment variables that affect menopausal symptoms
-    variable = if_else(variable == "night_sweats_f", "Night sweats, n (%)", variable),
-    variable = if_else(variable == "hot_flashes_f", "Hot flashes, n (%)", variable),
-    variable = if_else(variable == "vag_dry_f", "Vaginal or genital dryness, n (%)", variable),
-    variable = if_else(variable == "hormnw_f", "Female hormones now, n (%)", variable)
+    variable = if_else(variable == "night_sweats_f", "Night sweats, n (% yes)", variable),
+    variable = if_else(variable == "hot_flashes_f", "Hot flashes, n (% yes)", variable),
+    variable = if_else(variable == "vag_dry_f", "Vaginal or genital dryness, n (% yes)", variable),
+    variable = if_else(variable == "hormnw_f", "Female hormones now, n (% yes)", variable),
+    variable = if_else(variable == "ctos_f", "WHI study component, n (%)", variable)
   )
+```
 
-# Remove duplicate variable names for categorical variables
-table_01 <- table_01 %>%
+```{r echo=FALSE}
+# Add blank row after each categorical variable - for sliding class levels over later
+# For some reason, R automatically strips the leading white space. 
+# The best work around I can come up with is to add dashes, then find and replaces dashes with white space in Word.
+# For the variables that just had Yes/No options, condense to one row. 
+table <- table %>% 
+  group_by(variable) %>% 
+  mutate(
+    row = row_number(),
+    class = stringr::str_replace(class, "^", "---"),
+    drop = if_else(max(row) == 2 & any(class == "---Yes") & row == 1, 1L, 0L)
+  ) %>% 
+  filter(drop == 0) %>% 
   group_by(variable) %>%
-  mutate(
-    x = duplicated(variable),
-    x = if_else(variable == "", NA, x)
-  ) %>%
-  ungroup() %>%
-  mutate(
-    variable = if_else(x == TRUE, "", variable),
-    variable = if_else(is.na(variable), "", variable),
-    x = NULL
-  )
-
-rm(demo, smoking, health, depression, menopausal)
+  mutate(row = row_number()) %>% 
+  ungroup() %>% 
+  mutate(variable = if_else(row > 1, class, variable)) %>% 
+  select(-class, -row, -drop)
 ```
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-table_01_kable <- knitr::kable(table_01, col.names = c(
-  "Characteristic", "Class", 
+table_kable <- knitr::kable(table, col.names = c(
+  "Characteristic", 
   "No Abuse", 
-  "Any Abuse", 
-  "Verbal Only",
-  "Physical Only", 
-  "Verbal and Physical")
+  "Any Abuse")
 )
-
-write_rds(table_01_kable, path = "table_01_kable.rds") # Save for use in dashboard
-table_01_kable
+table_kable
 ```
 
 ```{r notes, include=FALSE}
 # After knitting word table:
-# Reorient to landscape
 # Change all font to TNR 11
-# Left justify title
 # Remove bold from title - except "Table 1"
-# Center columns 3 and above from top to bottom
+# Search and replace "---" with " "
+# Autofit to window
+# Center columns 2 & 3
+# Add border above "Characteristic" row
+# Remove border below "Characteristic" row
+# Add border below "N =" row
 # Adjust column widths as needed
-# Add line break between age groups
+# Add line break between variables
 # Add bottom border to table
 ```

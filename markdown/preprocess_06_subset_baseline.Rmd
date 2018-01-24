@@ -17,7 +17,7 @@ In this file, we reduce the data to one row per woman (baseline) and to only the
 
 * Baseline is either each woman's first response to an abuse question or day 0 if she never responded to either abuse question.
 
-This file also serves to **participant flow diagram** used in the manuscript.
+This file also serves to create **participant flow diagram** used in the manuscript.
 
 # Table of contents
 

@@ -1,0 +1,186 @@
+---
+title: "Unadjusted Percent of Abuse and Satisfaction"
+date: "Created: 2018-01-24 <br> Updated: `r Sys.Date()`"
+output: 
+  html_notebook:
+    css: custom-css.css
+---
+
+# Overview
+
+This file should only be used to analyze data that has already been cleaned and subset for analysis. Specifically, we start with baseline_only.feather, which is the same file used to create Table 1.
+
+The baseline_only data set was created in preprocess_06_subset_baseline.Rmd
+
+In this analysis, we will simply calculate the unadjusted percentage of women who reported abuse, and who reported satisfaction.
+
+The statistics calculated below are also used in **Figure 3**, **Figure 4**, and **Figure 5**
+
+# Table of contents
+
+1. [Sexual satisfaction](#sexual-satisfaction)   
+2. [Abuse status](#abuse-status)    
+3. [Bivariate relationship between abuse and sexual satisfaction](#bivariate)      
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(comment = NA)
+Sys.setenv(TZ = "US/Central")
+```
+
+```{r load_packages, message=FALSE}
+# Load packages
+library(tidyverse)
+library(feather)
+library(bfuncs)
+```
+
+```{r echo=FALSE}
+baseline_only <- read_feather("../data/baseline_only.feather")
+
+# Recode abuse_d_f to missing
+baseline_only <- baseline_only %>% 
+  mutate(
+    abuse_d_f = fct_recode(abuse_d_f, NULL = "Abuse not measured", 
+                           NULL = "Answered phyab, but not verbab",
+                           NULL = "Answered verbab, but not phyab")
+  ) %>% 
+  filter(!is.na(abuse_d_f)) #83,169
+```
+
+```{r}
+about_data(baseline_only) # 83,169 observations and 40 variables
+```
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Sexual satisfaction
+
+-------------------------------------------------------------------------------
+
+## Percent global sexual satisfaction
+
+```{r}
+baseline_only %>% 
+  filter(!is.na(satisfied_f)) %>% 
+  group_by(satisfied_f) %>% 
+  freq_table()
+```
+
+
+## Percent sexual frequency satisfaction
+
+```{r}
+baseline_only %>% 
+  filter(!is.na(freq_satisfied_f)) %>% 
+  group_by(freq_satisfied_f) %>% 
+  freq_table()
+```
+
+
+## Sexaul frequency desire by age
+
+```{r}
+baseline_only %>% 
+  filter( !is.na(satfrqsx_f) ) %>% 
+  group_by(age_group_f, satfrqsx_f) %>% 
+  freq_table() %>% 
+  select(1:5, percent_row)
+```
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Abuse Status
+
+-------------------------------------------------------------------------------
+
+## Prevalence of abuse overall
+
+```{r}
+baseline_only %>% 
+  group_by(abuse_d_f) %>%
+  freq_table()
+```
+
+
+## Prevalence of abuse overall by age group
+
+```{r}
+baseline_only %>% 
+  group_by(age_group_f, abuse_d_f) %>%
+  freq_table() %>% 
+  filter(col_cat == "Yes")
+```
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+
+# Bivariate relationship between abuse and sexual satisfaction {#bivariate}
+
+-------------------------------------------------------------------------------
+
+## Global sexual satisfaction
+
+```{r}
+baseline_only %>% 
+  filter(!is.na(satisfied_f)) %>% 
+  group_by(abuse_d_f, satisfied_f) %>% 
+  freq_table() %>% 
+  filter(col_cat == "No")
+```
+
+
+## Sexual frequency satisfaction
+
+```{r}
+baseline_only %>% 
+  filter(!is.na(freq_satisfied_f)) %>% 
+  group_by(abuse_d_f, freq_satisfied_f) %>% 
+  freq_table() %>% 
+  filter(col_cat == "No")
+```
+
+
+## Desire for greater frequency
+
+```{r}
+baseline_only %>% 
+  filter( !is.na(satfrqsx_f) ) %>% 
+  group_by(abuse_d_f, satfrqsx_f) %>% 
+  freq_table() %>% 
+  select(1:5, percent_row)
+```
+
+
+&nbsp;
+
+-------------------------------------------------------------------------------
+
+```{r echo=FALSE}
+sessionInfo()
+```

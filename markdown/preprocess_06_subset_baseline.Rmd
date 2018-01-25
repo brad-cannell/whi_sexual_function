@@ -1,15 +1,10 @@
 ---
 title: "Preprocess 06: Subset Baseline Data"
 date: "Created: 2017-07-17 <br> Updated:`r Sys.Date()`"
-output: html_notebook
+output: 
+  html_notebook:
+    css: custom-css.css
 ---
-
-<style>
-  hr {
-    background-color: #66b3ff;
-    height: 1px;
-  }
-</style>
 
 # Overview
 

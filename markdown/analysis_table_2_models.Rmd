@@ -10,6 +10,8 @@ output:
 
 In this file, we start with the multiply imputed baseline data for all women who were sexually active in the previous year. We then use logistic regression to model the relationship between abuse and sexual satisfaction.
 
+**Note on Table 2:** Because it's only a few numbers, I will no longer create table 2 directly using an R markdown document. Instead, Julie created a table in Word, and I will just fill in the numbers manually using the analyses from this file below.
+
 From EK 2017-07-17: 
 
 **Compute odds of sexual satisfaction (Table 2).**
